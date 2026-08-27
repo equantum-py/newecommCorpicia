@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -20,11 +21,14 @@ export const supabaseAdmin = createClient(
 );
 
 /**
- * Verifica centralmente si las escrituras administrativas están habilitadas.
- * Arroja un error controlado si no lo están.
+ * Habilita escrituras administrativas en producción de Vercel.
+ * En preview/desarrollo siguen bloqueadas salvo que ADMIN_WRITES_ENABLED=true.
  */
 export function assertAdminWritesEnabled() {
-  if (process.env.ADMIN_WRITES_ENABLED !== 'true') {
+  const isProduction = process.env.VERCEL_ENV === 'production';
+  const explicitlyEnabled = process.env.ADMIN_WRITES_ENABLED === 'true';
+
+  if (!isProduction && !explicitlyEnabled) {
     throw new Error('Las escrituras administrativas todavía no están habilitadas en este entorno');
   }
 }
