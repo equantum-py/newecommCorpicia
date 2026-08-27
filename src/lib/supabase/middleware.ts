@@ -8,6 +8,8 @@ export async function updateSession(request: NextRequest) {
     if (
       pathname === '/admin/login' ||
       pathname === '/admin/login/' ||
+      pathname === '/admin/reset-password' ||
+      pathname === '/admin/reset-password/' ||
       pathname.startsWith('/admin/auth')
     ) {
       return NextResponse.next();
@@ -36,38 +38,18 @@ export async function updateSession(request: NextRequest) {
             return request.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            });
+            request.cookies.set({ name, value, ...options });
             supabaseResponse = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
+              request: { headers: request.headers },
             });
-            supabaseResponse.cookies.set({
-              name,
-              value,
-              ...options,
-            });
+            supabaseResponse.cookies.set({ name, value, ...options });
           },
           remove(name: string, options: CookieOptions) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
+            request.cookies.set({ name, value: '', ...options });
             supabaseResponse = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
+              request: { headers: request.headers },
             });
-            supabaseResponse.cookies.set({
-              name,
-              value: '',
-              ...options,
-            });
+            supabaseResponse.cookies.set({ name, value: '', ...options });
           },
         },
       }
@@ -77,17 +59,14 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-
     const isAdminRoute = pathname.startsWith('/admin');
 
-    // If user is NOT logged in and trying to access a protected admin route, redirect to login
     if (!user && isAdminRoute) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
       return NextResponse.redirect(url);
     }
 
-    // Verify admin_profiles for protected admin routes
     if (user && isAdminRoute) {
       const { data: profile } = await supabase
         .from('admin_profiles')
@@ -96,7 +75,6 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       if (!profile || !profile.is_active) {
-        // If no valid profile or inactive, deny access by signing out and redirecting
         await supabase.auth.signOut();
         const url = request.nextUrl.clone();
         url.pathname = '/admin/login';
