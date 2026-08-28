@@ -1,10 +1,8 @@
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { supabaseAdmin, hasSupabaseAdminConfig } from '@/lib/supabase/admin';
 
-/**
- * Gets all categories from Supabase (including inactive ones), bypassing static fallback.
- * Uses the authenticated user client with RLS.
- */
 export async function getAdminCategories() {
+  if (!hasSupabaseAdminConfig()) return [];
+
   const { data, error } = await supabaseAdmin
     .from('categories')
     .select('*')
@@ -17,11 +15,9 @@ export async function getAdminCategories() {
   return data || [];
 }
 
-/**
- * Gets all products from Supabase (including inactive ones), bypassing static fallback.
- * Uses the authenticated user client with RLS.
- */
 export async function getAdminProducts() {
+  if (!hasSupabaseAdminConfig()) return [];
+
   const { data, error } = await supabaseAdmin
     .from('products')
     .select('*, categories(name, slug), product_images(image_url, order_index)')
@@ -34,10 +30,9 @@ export async function getAdminProducts() {
   return data || [];
 }
 
-/**
- * Gets a single product fully hydrated with relations for the edit form.
- */
 export async function getAdminProduct(id: string) {
+  if (!hasSupabaseAdminConfig()) return null;
+
   const { data, error } = await supabaseAdmin
     .from('products')
     .select('*, product_price_tiers(*), product_images(*), product_features(*), product_specifications(*), product_recommendations(*)')
@@ -51,11 +46,9 @@ export async function getAdminProduct(id: string) {
   return data;
 }
 
-/**
- * Obtiene el catálogo completo con las relaciones necesarias
- * para realizar la auditoría administrativa.
- */
 export async function getProductAuditData() {
+  if (!hasSupabaseAdminConfig()) return [];
+
   const { data, error } = await supabaseAdmin
     .from('products')
     .select(`
