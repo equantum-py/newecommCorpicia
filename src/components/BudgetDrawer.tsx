@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useBudgetStore } from '@/store/budgetStore';
 import { formatPrice, formatUnit, generateWhatsAppMessage, getSafeMinQuantity, getSafeQuantity, getProductImage } from '@/lib/utils';
 import { trackWhatsAppClick } from '@/lib/tracking';
-import { Minus, Plus, Trash2, ShoppingCart, X, MessageCircle, Package } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingCart, X, Package } from 'lucide-react';
 
 export function BudgetDrawer() {
   const pathname = usePathname();
@@ -25,18 +26,15 @@ export function BudgetDrawer() {
     }));
 
     const url = generateWhatsAppMessage(messageItems, getTotal());
-    // ✅ CORREGIDO: Usar api.whatsapp.com en vez de wa.me (evita bloqueo FortiGate)
     const safeUrl = url.replace('https://wa.me/', 'https://api.whatsapp.com/send?phone=');
     window.open(safeUrl, '_blank');
   };
 
   if (pathname?.startsWith('/admin')) return null;
-
   if (items.length === 0) return null;
 
   return (
     <>
-      {/* Botón flotante */}
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-6 z-[60] flex items-center gap-2 bg-corpicia-green text-white px-4 py-3 rounded-full shadow-lg"
@@ -47,16 +45,12 @@ export function BudgetDrawer() {
 
       {isOpen && (
         <>
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-[70]" 
-            onClick={() => setIsOpen(false)} 
+          <div
+            className="fixed inset-0 bg-black/50 z-[70]"
+            onClick={() => setIsOpen(false)}
           />
 
-          {/* Drawer */}
           <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-[80] flex flex-col shadow-2xl">
-
-            {/* Header */}
             <div className="flex justify-between p-4 border-b flex-shrink-0">
               <h2 className="font-bold flex gap-2 items-center">
                 <ShoppingCart className="w-5 h-5" /> Presupuesto
@@ -66,16 +60,21 @@ export function BudgetDrawer() {
               </button>
             </div>
 
-            {/* Productos - scrollable */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex gap-4 bg-gray-50 p-3 rounded-lg">
-
                   <div className="w-20 h-20 bg-white flex-shrink-0 rounded overflow-hidden">
                     {(() => {
                       const imgUrl = getProductImage(item.product);
                       return imgUrl ? (
-                        <img src={imgUrl} alt={item.product.name} className="object-cover w-full h-full" />
+                        <Image
+                          src={imgUrl}
+                          alt={item.product.name}
+                          width={80}
+                          height={80}
+                          sizes="80px"
+                          className="object-cover w-full h-full"
+                        />
                       ) : (
                         <div className="flex items-center justify-center h-full text-gray-300">
                           <Package size={28} />
@@ -99,7 +98,7 @@ export function BudgetDrawer() {
                           const isAtMin = safeQty <= safeMin;
                           return (
                             <>
-                              <button 
+                              <button
                                 onClick={() => updateQuantity(item.product.id, Math.max(safeMin, safeQty - 1))}
                                 disabled={isAtMin}
                                 className={`p-1 rounded ${isAtMin ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-200'}`}
@@ -111,7 +110,7 @@ export function BudgetDrawer() {
                                 {safeQty} {formatUnit(item.product.unit)}
                               </span>
 
-                              <button 
+                              <button
                                 onClick={() => updateQuantity(item.product.id, safeQty + 1)}
                                 className="p-1 hover:bg-gray-200 rounded"
                               >
@@ -122,7 +121,7 @@ export function BudgetDrawer() {
                         })()}
                       </div>
 
-                      <button 
+                      <button
                         onClick={() => removeItem(item.product.id)}
                         className="p-1 text-red-500 hover:bg-red-50 rounded"
                       >
@@ -134,22 +133,19 @@ export function BudgetDrawer() {
                       {formatPrice(item.total)}
                     </p>
                   </div>
-
                 </div>
               ))}
             </div>
 
-            {/* Footer del drawer - SIEMPRE VISIBLE */}
             <div className="p-4 border-t bg-white flex-shrink-0 space-y-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span>{formatPrice(getTotal())}</span>
               </div>
 
-              {/* ✅ BOTONES CORREGIDOS: Flex row en mobile, no superpuestos */}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 min-h-[44px]"
                   onClick={() => setIsOpen(false)}
                 >
@@ -157,7 +153,7 @@ export function BudgetDrawer() {
                 </Button>
 
                 <Link href="/presupuesto" className="flex-1">
-                  <Button 
+                  <Button
                     className="w-full min-h-[44px] bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => setIsOpen(false)}
                   >
@@ -166,7 +162,6 @@ export function BudgetDrawer() {
                 </Link>
               </div>
             </div>
-
           </div>
         </>
       )}
