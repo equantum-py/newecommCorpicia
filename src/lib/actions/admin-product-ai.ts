@@ -34,9 +34,7 @@ const productResponseSchema = {
       type: 'array',
       items: {
         type: 'object',
-        properties: {
-          feature_text: { type: 'string' },
-        },
+        properties: { feature_text: { type: 'string' } },
         required: ['feature_text'],
       },
     },
@@ -55,18 +53,13 @@ const productResponseSchema = {
       type: 'array',
       items: {
         type: 'object',
-        properties: {
-          recommendation_text: { type: 'string' },
-        },
+        properties: { recommendation_text: { type: 'string' } },
         required: ['recommendation_text'],
       },
     },
     seo_title: { type: 'string' },
     seo_description: { type: 'string' },
-    seo_keywords: {
-      type: 'array',
-      items: { type: 'string' },
-    },
+    seo_keywords: { type: 'array', items: { type: 'string' } },
   },
   required: [
     'short_description',
@@ -80,12 +73,42 @@ const productResponseSchema = {
   ],
 } as const;
 
+function isForageProduct(name: string, category?: string) {
+  const text = `${name} ${category || ''}`.toLowerCase();
+  const forageTerms = [
+    'pangola',
+    'ganado',
+    'forraje',
+    'forrajero',
+    'heno',
+    'fardo',
+    'alimentación animal',
+    'alimentacion animal',
+    'pecuario',
+  ];
+
+  return forageTerms.some((term) => text.includes(term));
+}
+
 function buildFallbackSpecifications(
   name: string,
   category?: string
 ): ProductAIContent['specifications'] {
   const normalizedName = name.toLowerCase();
   const normalizedCategory = (category || '').toLowerCase();
+
+  if (isForageProduct(name, category)) {
+    const weightMatch = name.match(/(\d+)\s*kg/i);
+    return [
+      { spec_key: 'Tipo de producto', spec_value: 'Forraje para alimentación animal' },
+      { spec_key: 'Uso recomendado', spec_value: 'Alimentación de ganado' },
+      { spec_key: 'Presentación', spec_value: 'Fardo' },
+      ...(weightMatch
+        ? [{ spec_key: 'Peso de presentación', spec_value: `${weightMatch[1]} kg` }]
+        : []),
+      { spec_key: 'Aplicación', spec_value: 'Uso pecuario / ganadero' },
+    ];
+  }
 
   if (
     normalizedName.includes('césped') ||
@@ -123,8 +146,8 @@ function buildFallbackSpecifications(
   }
 
   return [
-    { spec_key: 'Categoría', spec_value: category || 'Producto de jardinería' },
-    { spec_key: 'Uso recomendado', spec_value: 'Jardinería, paisajismo y mantenimiento de áreas verdes' },
+    { spec_key: 'Categoría', spec_value: category || 'Producto comercial' },
+    { spec_key: 'Uso recomendado', spec_value: 'Según aplicación específica del producto' },
     { spec_key: 'Presentación', spec_value: 'Según disponibilidad del producto' },
   ];
 }
@@ -249,11 +272,16 @@ export async function generateProductContentWithAI(
       return { success: false, message: 'Ingresá primero el nombre del producto.' };
     }
 
+    const forageContext = isForageProduct(name, input.category)
+      ? `\nCONTEXTO OBLIGATORIO DE ESTE PRODUCTO:\n- Es un producto forrajero/pecuario para alimentación de ganado.\n- NO es césped ornamental.\n- NO es un producto para jardines, paisajismo ni áreas verdes.\n- Si el nombre contiene "fardo" o un peso en kg, tratá esos datos como presentación comercial.\n- Priorizá términos como forraje, alimentación animal, ganado, uso ganadero y presentación en fardo.\n- No inventes propiedades nutricionales, proteína, humedad, especie botánica, rendimiento ni beneficios veterinarios que no estén confirmados.\n`
+      : '';
+
     const ai = new GoogleGenAI({ apiKey });
     const prompt = `
-Actuá como especialista técnico y redactor ecommerce de Corpicia Paraguay,
-empresa dedicada a jardinería, césped, paisajismo, riego y productos relacionados.
-
+Actuá como especialista técnico y redactor ecommerce de Corpicia Paraguay.
+Corpicia comercializa productos de jardinería, riego, paisajismo y también productos forrajeros/pecuarios.
+Antes de redactar, identificá el uso real del producto por su nombre y categoría. No asumas que todo producto de Corpicia es para paisajismo.
+${forageContext}
 Producto: ${name}
 Categoría: ${input.category?.trim() || 'Sin categoría indicada'}
 Descripción corta actual: ${input.currentShortDescription?.trim() || 'No disponible'}
@@ -261,7 +289,10 @@ Descripción completa actual: ${input.currentDescription?.trim() || 'No disponib
 
 Reglas:
 - Escribí en español claro, natural y profesional.
-- No inventes especie botánica, medidas, materiales, potencia, stock, garantía, compatibilidad, precio ni disponibilidad.
+- Respetá estrictamente el contexto de uso indicado por el nombre del producto.
+- Si aparecen palabras como Pangola, ganado, forraje, heno, fardo o alimentación animal, clasificá el producto como forrajero/pecuario.
+- Para productos forrajeros, jamás uses lenguaje de césped ornamental, jardines, patios, paisajismo, instalación de césped o áreas verdes.
+- No inventes especie botánica, composición nutricional, proteína, humedad, rendimiento, medidas, materiales, potencia, stock, garantía, compatibilidad, precio ni disponibilidad.
 - Solo afirmá datos técnicos presentes en el nombre o contexto recibido.
 - Descripción corta: 120 a 180 caracteres.
 - Descripción completa: 2 a 4 párrafos breves.
@@ -279,7 +310,7 @@ Reglas:
       model: 'gemini-3.1-flash-lite',
       contents: prompt,
       config: {
-        temperature: 0.3,
+        temperature: 0.25,
         responseMimeType: 'application/json',
         responseSchema: productResponseSchema,
       },
