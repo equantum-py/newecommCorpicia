@@ -13,26 +13,39 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  let userName = 'Administrador';
+  let userRole = 'admin';
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const hasSupabaseConfig = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
-  let profile: AdminProfile | null = null;
+  if (hasSupabaseConfig) {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  if (user) {
-    const { data } = await supabase
-      .from('admin_profiles')
-      .select('name, role, email')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      let profile: AdminProfile | null = null;
 
-    profile = data as AdminProfile | null;
+      if (user) {
+        const { data } = await supabase
+          .from('admin_profiles')
+          .select('name, role, email')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        profile = data as AdminProfile | null;
+      }
+
+      userName = profile?.name || user?.email || userName;
+      userRole = profile?.role || userRole;
+    } catch (error) {
+      console.error('[admin-layout] Supabase unavailable in this deployment:', error);
+    }
   }
-
-  const userName = profile?.name || user?.email || 'Admin';
-  const userRole = profile?.role || 'admin';
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
