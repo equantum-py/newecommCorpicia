@@ -2,11 +2,11 @@ export const revalidate = 60;
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ProductCard } from '@/components/ProductCard';
 import { Award, Users, Sprout, Briefcase, CheckCircle2, ArrowRight, MessageCircle, Droplets, Leaf, Wrench } from 'lucide-react';
 import { getProducts } from '@/lib/repositories/products';
 import { getBanners } from '@/lib/repositories/banners';
-import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { ProfessionalCta } from '@/components/home/ProfessionalCta';
 import { getProfessionalCta } from '@/lib/repositories/professional-cta';
 import { getSeoEntry } from '@/lib/repositories/seo';
@@ -36,6 +36,10 @@ function bannerImage(banner: any) {
   return banner?.image_desktop || banner?.imageDesktop || banner?.image_mobile || banner?.imageMobile || '';
 }
 
+function bannerLink(banner: any) {
+  return banner?.cta_link || banner?.link || '#';
+}
+
 export default async function HomePage() {
   const [productsCatalog, bannersResult, professionalCta] = await Promise.all([
     getProducts(),
@@ -49,6 +53,14 @@ export default async function HomePage() {
   const secondaryBanners = Array.isArray(bannersResult)
     ? bannersResult.filter((b: any) => b.type === 'secondary')
     : bannersResult.secondary;
+
+  const allPromotions = [...(heroBanners || []), ...(secondaryBanners || [])]
+    .filter((banner: any) => bannerImage(banner))
+    .filter((banner: any, index: number, list: any[]) => {
+      const key = banner.id || bannerImage(banner);
+      return list.findIndex((item: any) => (item.id || bannerImage(item)) === key) === index;
+    })
+    .slice(0, 6);
 
   const featuredSlugs = ['cesped-esmeralda', 'cesped-siempre-verde', 'cesped-kavaju', 'cesped-mani-docena'];
   const featuredProducts = featuredSlugs.map(slug => productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
@@ -139,18 +151,45 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {heroBanners?.length > 0 && (
-        <section className="border-y bg-gray-50 py-9">
+      {allPromotions.length > 0 && (
+        <section className="border-y bg-gray-50 py-10 md:py-12">
           <div className="container mx-auto px-4">
-            <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Promociones vigentes</p><h2 className="text-xl md:text-2xl font-bold">Ofertas y soluciones destacadas</h2></div></div>
-            <BannerCarousel banners={heroBanners} variant="hero-grid" />
-          </div>
-        </section>
-      )}
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Promociones</p>
+                <h2 className="mt-1 text-xl md:text-2xl font-bold">Soluciones destacadas</h2>
+              </div>
+            </div>
 
-      {secondaryBanners?.length > 0 && (
-        <section className="py-10">
-          <div className="container mx-auto px-4"><BannerCarousel banners={secondaryBanners} variant="single" /></div>
+            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+              {allPromotions.slice(0, 3).map((banner: any, index: number) => {
+                const image = bannerImage(banner);
+                const href = bannerLink(banner);
+                const content = (
+                  <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border bg-[#f4faf5] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <Image
+                      src={image}
+                      alt={banner.title || `Promoción Corpicia ${index + 1}`}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 767px) 86vw, 33vw"
+                      quality={78}
+                    />
+                  </div>
+                );
+
+                return href && href !== '#' ? (
+                  <Link key={banner.id || image} href={href} className="w-[86%] shrink-0 snap-start md:w-auto">
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={banner.id || image} className="w-[86%] shrink-0 snap-start md:w-auto">
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
       )}
 
