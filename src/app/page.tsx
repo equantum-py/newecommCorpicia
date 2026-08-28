@@ -14,209 +14,36 @@ import { getWhatsAppUrl } from '@/lib/utils';
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoEntry('/');
-  const defaultMeta = {
-    title: 'Césped Natural, Paisajismo y Riego Automático en Paraguay | Corpicia',
-    description: 'Venta e instalación de césped natural, paisajismo, riego automático y mantenimiento de jardines en Paraguay. Cotizá tu proyecto con Corpicia.',
-    alternates: { canonical: '/' },
-  };
-  if (!seo) return defaultMeta;
-  const seoTitle = seo.title || defaultMeta.title;
-  const seoDescription = seo.description || defaultMeta.description;
-  return {
-    title: seoTitle,
-    description: seoDescription,
-    keywords: seo.keywords ? seo.keywords.split(',').map((k: string) => k.trim()) : undefined,
-    alternates: defaultMeta.alternates,
-    openGraph: { title: seoTitle, description: seoDescription, images: seo.og_image ? [{ url: seo.og_image }] : undefined },
-    twitter: { title: seoTitle, description: seoDescription, images: seo.og_image ? [seo.og_image] : undefined },
-  };
+  const defaults = { title:'Césped Natural, Paisajismo y Riego Automático en Paraguay | Corpicia', description:'Venta e instalación de césped natural, paisajismo, riego automático y mantenimiento de jardines en Paraguay. Cotizá tu proyecto con Corpicia.', alternates:{canonical:'/'} };
+  if (!seo) return defaults;
+  const title=seo.title||defaults.title, description=seo.description||defaults.description;
+  return {title,description,keywords:seo.keywords?seo.keywords.split(',').map((k:string)=>k.trim()):undefined,alternates:defaults.alternates,openGraph:{title,description,images:seo.og_image?[{url:seo.og_image}]:undefined},twitter:{title,description,images:seo.og_image?[seo.og_image]:undefined}};
 }
 
-function bannerImage(banner: any) {
-  return banner?.image_desktop || banner?.imageDesktop || banner?.image_mobile || banner?.imageMobile || '';
-}
+const bannerImage=(b:any)=>b?.image_desktop||b?.imageDesktop||b?.image_mobile||b?.imageMobile||'';
+const bannerLink=(b:any)=>b?.cta_link||b?.link||'#';
 
-function bannerLink(banner: any) {
-  return banner?.cta_link || banner?.link || '#';
-}
-
-export default async function HomePage() {
-  const [productsCatalog, bannersResult, professionalCta] = await Promise.all([
-    getProducts(),
-    getBanners(),
-    getProfessionalCta(),
-  ]);
-
-  const heroBanners = Array.isArray(bannersResult)
-    ? bannersResult.filter((b: any) => b.type === 'hero')
-    : bannersResult.hero;
-  const secondaryBanners = Array.isArray(bannersResult)
-    ? bannersResult.filter((b: any) => b.type === 'secondary')
-    : bannersResult.secondary;
-
-  const allPromotions = [...(heroBanners || []), ...(secondaryBanners || [])]
-    .filter((banner: any) => bannerImage(banner))
-    .filter((banner: any, index: number, list: any[]) => {
-      const key = banner.id || bannerImage(banner);
-      return list.findIndex((item: any) => (item.id || bannerImage(item)) === key) === index;
-    })
-    .slice(0, 6);
-
-  const featuredSlugs = ['cesped-esmeralda', 'cesped-siempre-verde', 'cesped-kavaju', 'cesped-mani-docena'];
-  const featuredProducts = featuredSlugs.map(slug => productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
-  const irrigationProducts = ['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego'].map(slug => productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
-  const landscapeProducts = ['piso-ecologico-40x60','separador-cesped-caminos','pisos-imitacion-madera','granza-blanca-fina-decorativa','canto-rodado'].map(slug => productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
-
-  const whatsapp = getWhatsAppUrl();
-  const heroImage = bannerImage(heroBanners?.[0]);
-
-  const stats = [
-    { icon: Award, value: '+10 años', label: 'de experiencia' },
-    { icon: Users, value: '+1.000', label: 'clientes satisfechos' },
-    { icon: Sprout, value: '+50.000 m²', label: 'instalados' },
-    { icon: Briefcase, value: '+50', label: 'proyectos corporativos' },
-  ];
-
-  const services = [
-    { icon: Sprout, title: 'Instalación de césped', text: 'Preparación y colocación profesional de césped natural.', href: '/servicios/instalacion-de-cesped' },
-    { icon: Droplets, title: 'Riego automático', text: 'Diseño e instalación de sistemas de riego para jardines y proyectos.', href: '/servicios/riego-automatico' },
-    { icon: Leaf, title: 'Paisajismo', text: 'Diseño y ejecución de espacios verdes funcionales y estéticos.', href: '/servicios/paisajismo' },
-    { icon: Wrench, title: 'Mantenimiento', text: 'Cuidado periódico para conservar tu espacio verde.', href: '/servicios/mantenimiento-de-jardines' },
-  ];
-
-  return (
-    <div className="bg-white">
-      <section className="relative overflow-hidden bg-[#0b3d20] text-white">
-        {heroImage && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `linear-gradient(90deg, rgba(4,35,17,.88) 0%, rgba(4,35,17,.62) 42%, rgba(4,35,17,.12) 100%), url(${heroImage})` }}
-          />
-        )}
-        <div className="relative container mx-auto px-4 py-16 md:py-24 lg:py-28">
-          <div className="max-w-3xl">
-            <p className="mb-3 text-sm font-semibold text-green-200">Especialistas en espacios verdes en Paraguay</p>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.03]">
-              Césped natural, paisajismo y riego automático
-            </h1>
-            <p className="mt-5 max-w-2xl text-base sm:text-lg text-white/90 leading-relaxed">
-              Venta, instalación y asesoramiento profesional para hogares, empresas y proyectos.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 font-semibold text-white shadow-lg hover:brightness-95">
-                <MessageCircle className="h-5 w-5" /> Cotizar proyecto
-              </a>
-              <Link href="/productos" className="inline-flex min-h-12 items-center rounded-xl bg-white px-6 py-3 font-semibold text-gray-900 hover:bg-gray-100">
-                Ver productos
-              </Link>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
-              {['Asesoría personalizada','Instalación profesional','Cobertura en Paraguay'].map(item => (
-                <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-300" />{item}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 -mt-5 md:-mt-7">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 overflow-hidden rounded-2xl border bg-white shadow-xl">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.value} className={`flex items-center gap-3 px-4 py-5 md:px-6 ${index > 0 ? 'border-l' : ''} ${index > 1 ? 'border-t lg:border-t-0' : ''}`}>
-                  <Icon className="h-8 w-8 shrink-0 text-corpicia-green" />
-                  <div><p className="text-lg md:text-xl font-bold text-gray-950">{stat.value}</p><p className="text-xs md:text-sm text-gray-500">{stat.label}</p></div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-14">
-        <div className="container mx-auto px-4">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <div><p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Césped natural</p><h2 className="mt-1 text-2xl md:text-3xl font-bold">Elegí la variedad para tu proyecto</h2></div>
-            <Link href="/productos" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-corpicia-green">Ver todos <ArrowRight className="h-4 w-4" /></Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_230px]">
-            {featuredProducts.map((p:any)=><ProductCard key={p.id} product={p} />)}
-            <div className="col-span-2 md:col-span-4 lg:col-span-1 flex min-h-[260px] flex-col justify-between rounded-2xl border border-green-100 bg-green-50 p-5">
-              <div><p className="text-xl font-bold text-gray-950">¿No sabés qué césped elegir?</p><p className="mt-2 text-sm leading-relaxed text-gray-600">Mandanos una foto del terreno por WhatsApp y te orientamos según tu espacio.</p></div>
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white"><MessageCircle className="h-4 w-4"/>Consultar ahora</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {allPromotions.length > 0 && (
-        <section className="border-y bg-gray-50 py-10 md:py-12">
-          <div className="container mx-auto px-4">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Promociones</p>
-                <h2 className="mt-1 text-xl md:text-2xl font-bold">Soluciones destacadas</h2>
-              </div>
-            </div>
-
-            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
-              {allPromotions.slice(0, 3).map((banner: any, index: number) => {
-                const image = bannerImage(banner);
-                const href = bannerLink(banner);
-                const content = (
-                  <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border bg-[#f4faf5] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                    <Image
-                      src={image}
-                      alt={banner.title || `Promoción Corpicia ${index + 1}`}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 767px) 86vw, 33vw"
-                      quality={78}
-                    />
-                  </div>
-                );
-
-                return href && href !== '#' ? (
-                  <Link key={banner.id || image} href={href} className="w-[86%] shrink-0 snap-start md:w-auto">
-                    {content}
-                  </Link>
-                ) : (
-                  <div key={banner.id || image} className="w-[86%] shrink-0 snap-start md:w-auto">
-                    {content}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="bg-[#072f19] py-12 text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div><p className="text-sm font-semibold text-green-300">Riego automático</p><h2 className="mt-2 text-3xl md:text-4xl font-bold">Cuidá mejor tus áreas verdes</h2><p className="mt-3 max-w-xl text-white/75">Sistemas eficientes para jardines y proyectos, con asesoramiento e instalación profesional.</p><Link href="/servicios/riego-automatico" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-white px-5 py-2.5 font-semibold text-gray-900">Ver sistemas de riego</Link></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{irrigationProducts.map((p:any)=><div key={p.id} className="rounded-xl bg-white text-gray-900 overflow-hidden"><ProductCard product={p}/></div>)}</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-14 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Servicios</p><h2 className="mt-1 text-2xl md:text-3xl font-bold">Soluciones para tu espacio verde</h2></div><Link href="/servicios" className="hidden sm:inline-flex text-sm font-semibold text-corpicia-green">Ver todos los servicios →</Link></div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{services.map(service=>{const Icon=service.icon;return <Link key={service.href} href={service.href} className="group rounded-2xl border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50"><Icon className="h-5 w-5 text-corpicia-green"/></div><h3 className="mt-4 text-lg font-bold">{service.title}</h3><p className="mt-2 text-sm leading-relaxed text-gray-600">{service.text}</p><span className="mt-4 inline-flex text-sm font-semibold text-corpicia-green">Ver servicio →</span></Link>})}</div>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-14">
-        <div className="container mx-auto px-4">
-          <div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Paisajismo</p><h2 className="mt-1 text-2xl md:text-3xl font-bold">Terminaciones y materiales</h2></div><Link href="/servicios/paisajismo" className="text-sm font-semibold text-corpicia-green">Ver servicio →</Link></div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">{landscapeProducts.map((p:any)=><ProductCard key={p.id} product={p}/>)}</div>
-        </div>
-      </section>
-
-      <ProfessionalCta settings={professionalCta} />
-    </div>
-  );
+export default async function HomePage(){
+ const [productsCatalog,bannersResult,professionalCta]=await Promise.all([getProducts(),getBanners(),getProfessionalCta()]);
+ const heroBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='hero'):bannersResult.hero;
+ const secondaryBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='secondary'):bannersResult.secondary;
+ const allPromotions=[...(heroBanners||[]),...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
+ const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
+ const featuredProducts=pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']);
+ const irrigationProducts=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
+ const landscapeProducts=pick(['piso-ecologico-40x60','separador-cesped-caminos','pisos-imitacion-madera','granza-blanca-fina-decorativa','canto-rodado']);
+ const whatsapp=getWhatsAppUrl(), heroImage=bannerImage(heroBanners?.[0]);
+ const stats=[{icon:Award,value:'+10 años',label:'experiencia'},{icon:Users,value:'+1.000',label:'clientes'},{icon:Sprout,value:'+50.000 m²',label:'instalados'},{icon:Briefcase,value:'+50',label:'proyectos'}];
+ const services=[{icon:Sprout,title:'Instalación de césped',text:'Preparación y colocación profesional de césped natural.',href:'/servicios/instalacion-de-cesped'},{icon:Droplets,title:'Riego automático',text:'Diseño e instalación de sistemas de riego.',href:'/servicios/riego-automatico'},{icon:Leaf,title:'Paisajismo',text:'Diseño y ejecución de espacios verdes.',href:'/servicios/paisajismo'},{icon:Wrench,title:'Mantenimiento',text:'Cuidado periódico de tu espacio verde.',href:'/servicios/mantenimiento-de-jardines'}];
+ const Rail=({items,dark=false}:{items:any[],dark?:boolean})=><div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 md:grid-cols-4 sm:overflow-visible">{items.map((p:any)=><div key={p.id} className={`w-[72vw] max-w-[290px] shrink-0 snap-start sm:w-auto sm:max-w-none ${dark?'rounded-xl bg-white text-gray-900 overflow-hidden':''}`}><ProductCard product={p}/></div>)}</div>;
+ return <div className="bg-white">
+  <section className="relative overflow-hidden bg-[#0b3d20] text-white">{heroImage&&<div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:`linear-gradient(90deg,rgba(4,35,17,.9),rgba(4,35,17,.68) 55%,rgba(4,35,17,.18)),url(${heroImage})`}}/>}<div className="relative container mx-auto px-4 py-10 sm:py-16 md:py-24 lg:py-28"><div className="max-w-3xl"><p className="mb-2 text-xs sm:text-sm font-semibold text-green-200">Especialistas en espacios verdes en Paraguay</p><h1 className="max-w-[520px] text-[34px] sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.02]">Césped natural, paisajismo y riego automático</h1><p className="mt-3 sm:mt-5 max-w-2xl text-sm sm:text-lg text-white/90">Venta, instalación y asesoramiento profesional para hogares, empresas y proyectos.</p><div className="mt-5 sm:mt-7 flex gap-2 sm:gap-3"><a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-4 sm:px-6 py-2.5 font-semibold text-white"><MessageCircle className="h-4 w-4"/>Cotizar proyecto</a><Link href="/productos" className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 sm:px-6 py-2.5 font-semibold text-gray-900">Ver productos</Link></div><div className="mt-5 sm:mt-8 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] sm:text-sm text-white/90">{['Asesoría personalizada','Instalación profesional','Cobertura en Paraguay'].map(x=><span key={x} className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-green-300"/>{x}</span>)}</div></div></div></section>
+  <section className="relative z-10 -mt-3 sm:-mt-5 md:-mt-7"><div className="container mx-auto px-4"><div className="grid grid-cols-2 lg:grid-cols-4 overflow-hidden rounded-xl sm:rounded-2xl border bg-white shadow-lg">{stats.map((s,i)=>{const Icon=s.icon;return <div key={s.value} className={`flex items-center gap-2 px-3 py-3.5 sm:px-6 sm:py-5 ${i%2?'border-l':''} ${i>1?'border-t lg:border-t-0':''} lg:border-l`}><Icon className="h-5 w-5 sm:h-8 sm:w-8 shrink-0 text-corpicia-green"/><div><p className="text-sm sm:text-xl font-bold">{s.value}</p><p className="text-[10px] sm:text-sm text-gray-500">{s.label}</p></div></div>})}</div></div></section>
+  <section className="py-8 sm:py-12 md:py-14"><div className="container mx-auto px-4"><div className="mb-4 sm:mb-6 flex items-end justify-between"><div><p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-corpicia-green">Césped natural</p><h2 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold">Elegí la variedad para tu proyecto</h2></div><Link href="/productos" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-corpicia-green">Ver todos <ArrowRight className="h-4 w-4"/></Link></div><Rail items={featuredProducts}/><div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-green-100 bg-green-50 p-4 lg:hidden"><div><p className="font-bold">¿No sabés cuál elegir?</p><p className="mt-1 text-xs text-gray-600">Mandanos una foto y te orientamos.</p></div><a href={whatsapp} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-semibold text-white">Consultar</a></div></div></section>
+  {allPromotions.length>0&&<section className="border-y bg-gray-50 py-7 sm:py-10"><div className="container mx-auto px-4"><div className="mb-4"><p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-corpicia-green">Promociones</p><h2 className="mt-1 text-xl sm:text-2xl font-bold">Soluciones destacadas</h2></div><div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:px-0 md:overflow-visible">{allPromotions.map((b:any,i:number)=>{const image=bannerImage(b),href=bannerLink(b);const card=<div className="relative aspect-[16/9] overflow-hidden rounded-xl border bg-[#f4faf5]"><Image src={image} alt={b.title||`Promoción Corpicia ${i+1}`} fill className="object-contain" sizes="(max-width:767px) 82vw,33vw" quality={78}/></div>;return href&&href!=='#'?<Link key={b.id||image} href={href} className="w-[82vw] max-w-[360px] shrink-0 snap-start md:w-auto md:max-w-none">{card}</Link>:<div key={b.id||image} className="w-[82vw] max-w-[360px] shrink-0 snap-start md:w-auto md:max-w-none">{card}</div>})}</div></div></section>}
+  <section className="bg-[#072f19] py-8 sm:py-12 text-white"><div className="container mx-auto px-4"><div className="grid gap-5 sm:gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center"><div><p className="text-xs sm:text-sm font-semibold text-green-300">Riego automático</p><h2 className="mt-1 text-2xl sm:text-3xl md:text-4xl font-bold">Cuidá mejor tus áreas verdes</h2><p className="mt-2 max-w-xl text-sm text-white/75">Sistemas eficientes con asesoramiento e instalación profesional.</p><Link href="/servicios/riego-automatico" className="mt-4 inline-flex min-h-10 items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900">Ver sistemas de riego</Link></div><Rail items={irrigationProducts} dark/></div></div></section>
+  <section className="bg-gray-50 py-8 sm:py-12 md:py-14"><div className="container mx-auto px-4"><div className="mb-4 sm:mb-6 flex items-center justify-between"><div><p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-corpicia-green">Servicios</p><h2 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold">Soluciones para tu espacio verde</h2></div><Link href="/servicios" className="hidden sm:inline text-sm font-semibold text-corpicia-green">Ver todos →</Link></div><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{services.map(s=>{const Icon=s.icon;return <Link key={s.href} href={s.href} className="rounded-xl border bg-white p-3.5 sm:p-5"><div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-green-50"><Icon className="h-4 w-4 sm:h-5 sm:w-5 text-corpicia-green"/></div><h3 className="mt-3 text-sm sm:text-lg font-bold">{s.title}</h3><p className="mt-1.5 hidden sm:block text-sm text-gray-600">{s.text}</p><span className="mt-2 inline-flex text-xs sm:text-sm font-semibold text-corpicia-green">Ver servicio →</span></Link>})}</div></div></section>
+  <section className="py-8 sm:py-12 md:py-14"><div className="container mx-auto px-4"><div className="mb-4 sm:mb-6 flex items-end justify-between"><div><p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-corpicia-green">Paisajismo</p><h2 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold">Terminaciones y materiales</h2></div><Link href="/servicios/paisajismo" className="text-xs sm:text-sm font-semibold text-corpicia-green">Ver servicio →</Link></div><div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 sm:overflow-visible lg:grid-cols-5">{landscapeProducts.map((p:any)=><div key={p.id} className="w-[68vw] max-w-[270px] shrink-0 snap-start sm:w-auto sm:max-w-none"><ProductCard product={p}/></div>)}</div></div></section>
+  <ProfessionalCta settings={professionalCta}/>
+ </div>;
 }
