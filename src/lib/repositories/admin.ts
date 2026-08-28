@@ -47,11 +47,7 @@ function mapStaticProductToAdmin(product: any) {
 const existingCatalog = productsCatalog.map(mapStaticProductToAdmin);
 
 async function getReadClient() {
-  // El panel administrativo viejo lee con Service Role para ver TODO el catálogo,
-  // incluyendo productos inactivos. Debemos mantener exactamente ese comportamiento.
-  if (hasSupabaseAdminConfig()) {
-    return supabaseAdmin;
-  }
+  if (hasSupabaseAdminConfig()) return supabaseAdmin;
 
   try {
     const client = createClient();
@@ -83,68 +79,56 @@ export async function getAdminCategories() {
   const supabase = await getReadClient();
   if (!supabase) return getStaticCategories();
 
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('order_index');
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('order_index');
 
-    if (error) {
-      console.error('Error fetching admin categories:', error.message);
-      return getStaticCategories();
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching admin categories:', error);
+  if (error) {
+    console.error('Error fetching admin categories:', error.message);
     return getStaticCategories();
   }
+
+  return data || [];
 }
 
 export async function getAdminProducts() {
   const supabase = await getReadClient();
   if (!supabase) return existingCatalog;
 
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, categories(name, slug), product_images(image_url, order_index), product_price_tiers(*)')
-      .order('created_at', { ascending: false });
+  // Exactamente la misma consulta que usa el panel antiguo en producción.
+  // Los precios escalables se cargan al editar el producto, no en el listado.
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, categories(name, slug), product_images(image_url, order_index)')
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching full admin catalog:', error.message);
-      return existingCatalog;
-    }
-
-    if (!data || data.length === 0) {
-      console.warn('[Admin Repository] Supabase returned zero products; showing existing catalog fallback.');
-      return existingCatalog;
-    }
-
-    console.info(`[Admin Repository] Full catalog loaded: ${data.length} products.`);
-    return data;
-  } catch (error) {
-    console.error('Error fetching full admin catalog:', error);
+  if (error) {
+    console.error('Error fetching admin products:', error.message);
     return existingCatalog;
   }
+
+  if (!data || data.length === 0) {
+    console.warn('[Admin Repository] Supabase returned zero products; showing existing catalog fallback.');
+    return existingCatalog;
+  }
+
+  console.info(`[Admin Repository] Full catalog loaded: ${data.length} products.`);
+  return data;
 }
 
 export async function getAdminProduct(id: string) {
   const supabase = await getReadClient();
 
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, product_price_tiers(*), product_images(*), product_features(*), product_specifications(*), product_recommendations(*)')
-        .eq('id', id)
-        .single();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_price_tiers(*), product_images(*), product_features(*), product_specifications(*), product_recommendations(*)')
+      .eq('id', id)
+      .single();
 
-      if (!error && data) return data;
-      if (error) console.error('Error fetching admin product:', error.message);
-    } catch (error) {
-      console.error('Error fetching admin product:', error);
-    }
+    if (!error && data) return data;
+    if (error) console.error('Error fetching admin product:', error.message);
   }
 
   return existingCatalog.find((product: any) => String(product.id) === String(id)) || null;
@@ -154,38 +138,34 @@ export async function getProductAuditData() {
   const supabase = await getReadClient();
 
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          slug,
-          description,
-          short_description,
-          price_amount,
-          unit,
-          category_id,
-          is_active,
-          is_featured,
-          seo_title,
-          seo_description,
-          seo_keywords,
-          created_at,
-          updated_at,
-          categories(name, slug),
-          product_images(id, image_url, alt_text, order_index),
-          product_features(id, feature_text),
-          product_specifications(id, spec_key, spec_value),
-          product_recommendations(id, recommendation_text)
-        `)
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        description,
+        short_description,
+        price_amount,
+        unit,
+        category_id,
+        is_active,
+        is_featured,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        created_at,
+        updated_at,
+        categories(name, slug),
+        product_images(id, image_url, alt_text, order_index),
+        product_features(id, feature_text),
+        product_specifications(id, spec_key, spec_value),
+        product_recommendations(id, recommendation_text)
+      `)
+      .order('created_at', { ascending: false });
 
-      if (!error && data?.length) return data;
-      if (error) console.error('Error fetching product audit data:', error.message);
-    } catch (error) {
-      console.error('Error fetching product audit data:', error);
-    }
+    if (!error && data?.length) return data;
+    if (error) console.error('Error fetching product audit data:', error.message);
   }
 
   return existingCatalog;
