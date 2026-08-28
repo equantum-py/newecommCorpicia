@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const isDev = process.env.NODE_ENV !== 'production';
-
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -19,49 +17,39 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
+  // ✅ SIN REDIRECTS DE DOMINIO - Vercel los maneja
   async redirects() {
     return [];
   },
 
   async headers() {
-    const scriptSrc = [
-      "'self'",
-      "'unsafe-inline'",
-      ...(isDev ? ["'unsafe-eval'"] : []),
-      'https://www.googletagmanager.com',
-      'https://www.google-analytics.com',
-      'https://www.googleadservices.com',
-      'https://googleads.g.doubleclick.net',
-      'https://connect.facebook.net',
-      'https://www.clarity.ms',
-    ].join(' ');
-
     return [
       {
         source: '/:path*',
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { 
+            key: 'Strict-Transport-Security', 
+            value: 'max-age=63072000; includeSubDomains; preload' 
+          },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
+          { 
+            key: 'Permissions-Policy', 
+            value: 'camera=(), microphone=(), geolocation=(self)' 
+          },
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              `script-src ${scriptSrc}`,
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.google.com.py https://*.supabase.co https://tile.openstreetmap.org https://*.clarity.ms",
+              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://tile.openstreetmap.org",
               "font-src 'self'",
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.supabase.co https://nominatim.openstreetmap.org https://*.clarity.ms",
-              "frame-src https://www.googletagmanager.com https://td.doubleclick.net",
+              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.supabase.co https://nominatim.openstreetmap.org",
+              "frame-src https://www.googletagmanager.com",
               "media-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self' https://wa.me https://api.whatsapp.com",
-              "frame-ancestors 'self'",
-              'upgrade-insecure-requests',
             ].join('; '),
           },
         ],
