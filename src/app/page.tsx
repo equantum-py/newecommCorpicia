@@ -50,18 +50,9 @@ export default async function HomePage() {
   ];
 
   return <div className="bg-white">
-    <section className="border-b bg-gradient-to-b from-green-50/50 to-white">
-      <div className="container mx-auto px-4 pt-5 md:pt-7">
-        <div className="max-w-5xl mx-auto text-center mb-5">
-          <p className="text-xs sm:text-sm text-corpicia-green font-semibold mb-1.5">Especialistas en espacios verdes en Paraguay</p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-950 leading-tight">Césped natural, paisajismo y riego automático</h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">Venta, instalación y asesoramiento profesional para hogares, empresas y proyectos.</p>
-          <div className="mt-4 flex flex-row flex-wrap justify-center gap-2">
-            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-corpicia-green px-5 py-2 text-sm font-semibold text-white hover:opacity-90">Cotizar proyecto</a>
-            <Link href="/productos" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">Ver productos</Link>
-          </div>
-        </div>
-        <div className="pb-5"><BannerCarousel banners={heroBanners} variant="hero-grid" /></div>
+    <section className="border-b bg-white">
+      <div className="container mx-auto px-4 pt-4 md:pt-5 pb-5">
+        <BannerCarousel banners={heroBanners} variant="hero-grid" />
       </div>
     </section>
 
@@ -70,6 +61,20 @@ export default async function HomePage() {
     <section className="py-9 md:py-11"><div className="container mx-auto px-4"><div className="flex items-end justify-between gap-4 mb-5"><div><p className="text-xs font-bold uppercase tracking-wider text-corpicia-green">Césped natural</p><h2 className="text-xl md:text-2xl font-bold mt-1">Productos destacados</h2></div><Link href="/productos" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-corpicia-green">Ver catálogo <ArrowRight className="w-4 h-4"/></Link></div><div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">{featuredProducts.map((p:any)=><ProductCard key={p.id} product={p}/>)}</div></div></section>
 
     <section className="pb-10"><div className="container mx-auto px-4"><BannerCarousel banners={secondaryBanners} variant="single" /></div></section>
+
+    <section className="border-y bg-gradient-to-b from-green-50/50 to-white">
+      <div className="container mx-auto px-4 py-7 md:py-9">
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-xs sm:text-sm text-corpicia-green font-semibold mb-1.5">Especialistas en espacios verdes en Paraguay</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-950 leading-tight">Césped natural, paisajismo y riego automático</h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Venta, instalación y asesoramiento profesional para hogares, empresas y proyectos.</p>
+          <div className="mt-4 flex flex-row flex-wrap justify-center gap-2">
+            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-corpicia-green px-5 py-2 text-sm font-semibold text-white hover:opacity-90">Cotizar proyecto</a>
+            <Link href="/productos" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50">Ver productos</Link>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section className="py-9 bg-gray-50"><div className="container mx-auto px-4"><div className="flex items-center justify-between mb-5"><h2 className="text-xl md:text-2xl font-bold">Riego automático</h2><Link href="/servicios/riego-automatico" className="text-sm font-semibold text-corpicia-green">Ver servicio →</Link></div><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{irrigationProducts.map((p:any)=><ProductCard key={p.id} product={p}/>)}</div></div></section>
 
