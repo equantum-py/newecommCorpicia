@@ -47,6 +47,12 @@ function mapStaticProductToAdmin(product: any) {
 const existingCatalog = productsCatalog.map(mapStaticProductToAdmin);
 
 async function getReadClient() {
+  // El panel administrativo viejo lee con Service Role para ver TODO el catálogo,
+  // incluyendo productos inactivos. Debemos mantener exactamente ese comportamiento.
+  if (hasSupabaseAdminConfig()) {
+    return supabaseAdmin;
+  }
+
   try {
     const client = createClient();
     const { data: authData } = await client.auth.getUser();
@@ -55,7 +61,7 @@ async function getReadClient() {
     console.error('[Admin Repository] Authenticated Supabase client unavailable:', error);
   }
 
-  return hasSupabaseAdminConfig() ? supabaseAdmin : null;
+  return null;
 }
 
 function getStaticCategories() {
@@ -115,6 +121,7 @@ export async function getAdminProducts() {
       return existingCatalog;
     }
 
+    console.info(`[Admin Repository] Full catalog loaded: ${data.length} products.`);
     return data;
   } catch (error) {
     console.error('Error fetching full admin catalog:', error);
