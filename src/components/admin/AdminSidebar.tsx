@@ -18,7 +18,7 @@ import {
   UserCircle,
   Activity,
   LineChart,
-  BriefcaseBusiness,
+  Briefcase,
   BellRing,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ const navItems = [
       { name: 'Inicio / Home', href: '/admin/inicio#contenido-home', icon: Home },
       { name: 'Promociones', href: '/admin/banners', icon: Megaphone },
       { name: 'Servicios', href: '/admin/servicios', icon: Wrench },
-      { name: 'CTA Profesionales', href: '/admin/cta-profesionales', icon: BriefcaseBusiness },
+      { name: 'CTA Profesionales', href: '/admin/cta-profesionales', icon: Briefcase },
       { name: 'Multimedia', href: '/admin/multimedia', icon: ImageIcon },
     ],
   },
