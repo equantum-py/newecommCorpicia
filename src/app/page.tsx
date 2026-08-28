@@ -1,7 +1,5 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
-import Image from 'next/image';
 import type { Metadata } from 'next';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductCard } from '@/components/ProductCard';
@@ -11,7 +9,6 @@ import { getBanners } from '@/lib/repositories/banners';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { ProfessionalCta } from '@/components/home/ProfessionalCta';
 import { getProfessionalCta } from '@/lib/repositories/professional-cta';
-
 import { getSeoEntry } from '@/lib/repositories/seo';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -42,16 +39,23 @@ export async function generateMetadata(): Promise<Metadata> {
       title: seoTitle,
       description: seoDescription,
       images: seo.og_image ? [seo.og_image] : undefined,
-    }
+    },
   };
 }
 
 export default async function HomePage() {
-  const productsCatalog = await getProducts();
-  const bannersResult = await getBanners();
-  const professionalCta = await getProfessionalCta();
-  const heroBanners = Array.isArray(bannersResult) ? bannersResult.filter((b: any) => b.type === 'hero') : bannersResult.hero;
-  const secondaryBanners = Array.isArray(bannersResult) ? bannersResult.filter((b: any) => b.type === 'secondary') : bannersResult.secondary;
+  const [productsCatalog, bannersResult, professionalCta] = await Promise.all([
+    getProducts(),
+    getBanners(),
+    getProfessionalCta(),
+  ]);
+
+  const heroBanners = Array.isArray(bannersResult)
+    ? bannersResult.filter((b: any) => b.type === 'hero')
+    : bannersResult.hero;
+  const secondaryBanners = Array.isArray(bannersResult)
+    ? bannersResult.filter((b: any) => b.type === 'secondary')
+    : bannersResult.secondary;
 
   const featuredProducts = [
     productsCatalog.find((p: any) => p.slug === 'cesped-esmeralda'),
@@ -85,11 +89,8 @@ export default async function HomePage() {
     { icon: Shield, title: 'Compra Segura', description: 'Transparencia total.' },
   ];
 
-  const whatsappHref = 'https://wa.me/595992588770';
-
   return (
     <div className="bg-white">
-      {/* ✅ BANNERS HERO - MEJORADO PARA MOBILE */}
       <section className="border-b">
         <div className="container mx-auto px-4 py-4 sm:py-6">
           <BannerCarousel banners={heroBanners} variant="hero-grid" />
@@ -117,10 +118,7 @@ export default async function HomePage() {
 
       <section className="py-10">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6">
-            Productos destacados
-          </h2>
-
+          <h2 className="text-xl sm:text-2xl font-bold mb-6">Productos destacados</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {featuredProducts.map((p) => (
               <ProductCard key={p!.id} product={p!} />
@@ -134,7 +132,6 @@ export default async function HomePage() {
           <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
             <div className="grid gap-4">
               <BannerCarousel banners={secondaryBanners} variant="single" />
-
               <div className="grid grid-cols-2 gap-4">
                 {underBannerProducts.map((p) => (
                   <ProductCard key={p!.id} product={p!} />
@@ -143,9 +140,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid gap-4">
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Riego Automático
-              </h2>
+              <h2 className="text-xl sm:text-2xl font-bold">Riego Automático</h2>
               {mixedProducts.map((p) => (
                 <ProductCard key={p!.id} product={p!} />
               ))}
@@ -154,7 +149,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ✅ SECCIÓN PAISAJISMO - CARRUSEL EN DESKTOP */}
       <section className="pb-14">
         <div className="container mx-auto px-4">
           <h2 className="text-xl sm:text-2xl font-bold mb-6">Paisajismo</h2>
@@ -173,28 +167,21 @@ export default async function HomePage() {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {secondaryProducts.map((p) => (
-                <div
-                  className="flex-shrink-0 w-[280px]"
-                  key={p!.id}
-                >
+                <div className="flex-shrink-0 w-[280px]" key={p!.id}>
                   <ProductCard product={p!} />
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-center gap-2 mt-2">
+            <div className="flex justify-center gap-2 mt-2" aria-hidden="true">
               {secondaryProducts.map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-gray-300"
-                />
+                <div key={i} className="w-2 h-2 rounded-full bg-gray-300" />
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA PARA JARDINEROS Y PROFESIONALES */}
       <ProfessionalCta settings={professionalCta} />
     </div>
   );
