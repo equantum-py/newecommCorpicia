@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const isProduction = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -17,40 +19,48 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
-  // ✅ SIN REDIRECTS DE DOMINIO - Vercel los maneja
   async redirects() {
     return [];
   },
 
   async headers() {
+    const scriptSrc = [
+      "'self'",
+      "'unsafe-inline'",
+      !isProduction ? "'unsafe-eval'" : null,
+      'https://www.googletagmanager.com',
+      'https://www.google-analytics.com',
+      'https://www.clarity.ms',
+      'https://scripts.clarity.ms',
+      'https://connect.facebook.net',
+    ].filter(Boolean).join(' ');
+
     return [
       {
         source: '/:path*',
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { 
-            key: 'Strict-Transport-Security', 
-            value: 'max-age=63072000; includeSubDomains; preload' 
-          },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { 
-            key: 'Permissions-Policy', 
-            value: 'camera=(), microphone=(), geolocation=(self)' 
-          },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://tile.openstreetmap.org",
+              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://tile.openstreetmap.org https://www.clarity.ms",
               "font-src 'self'",
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.supabase.co https://nominatim.openstreetmap.org",
+              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://nominatim.openstreetmap.org https://www.clarity.ms https://*.clarity.ms",
               "frame-src https://www.googletagmanager.com",
               "media-src 'self'",
-            ].join('; '),
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'self'",
+              isProduction ? 'upgrade-insecure-requests' : null,
+            ].filter(Boolean).join('; '),
           },
         ],
       },

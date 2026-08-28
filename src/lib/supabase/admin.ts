@@ -4,21 +4,30 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  // Solo logueamos advertencia interna en servidor, nunca exponemos la llave en errores de UI.
-  console.error('[Supabase Admin] Configuración incompleta. Faltan variables de entorno.');
+const isSupabaseAdminConfigured = Boolean(supabaseUrl && supabaseServiceKey);
+
+if (!isSupabaseAdminConfigured) {
+  console.warn('[Supabase Admin] Configuración incompleta. El cliente admin quedará inactivo en este entorno.');
 }
 
-export const supabaseAdmin = createClient(
-  supabaseUrl || '',
-  supabaseServiceKey || '',
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  }
-);
+const unavailableSupabaseAdmin = new Proxy({} as SupabaseClient, {
+  get() {
+    throw new Error('Supabase Admin no está configurado en este entorno');
+  },
+});
+
+export const supabaseAdmin: SupabaseClient = isSupabaseAdminConfigured
+  ? createClient(supabaseUrl as string, supabaseServiceKey as string, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+  : unavailableSupabaseAdmin;
+
+export function hasSupabaseAdminConfig() {
+  return isSupabaseAdminConfigured;
+}
 
 /**
  * Habilita escrituras administrativas en producción de Vercel.
