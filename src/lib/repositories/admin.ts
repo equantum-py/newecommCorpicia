@@ -1,126 +1,127 @@
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin, hasSupabaseAdminConfig } from '@/lib/supabase/admin';
-import { productsCatalog } from '@/data/productsData';
 
-function mapStaticProductToAdmin(product: any) {
-  const categoryName = String(product.category || '')
-    .split('-')
-    .filter(Boolean)
-    .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-  return {
-    id: String(product.id),
-    name: product.name,
-    slug: product.slug,
-    description: product.description || '',
-    short_description: product.shortDescription || '',
-    price_amount: product.pricePerM2 ?? product.price_amount ?? 0,
-    unit: product.unit || 'unidad',
-    min_order_quantity: product.minQuantity ?? product.min_order_quantity ?? 1,
-    category_id: product.categoryId || product.category || null,
-    is_active: product.isActive !== false,
-    is_featured: product.isFeatured === true,
-    seo_title: product.seoTitle || product.name,
-    seo_description: product.seoDescription || product.shortDescription || '',
-    seo_keywords: product.seoKeywords || [],
-    created_at: product.createdAt || null,
-    updated_at: product.updatedAt || null,
-    categories: categoryName ? { name: categoryName, slug: product.category } : null,
-    product_images: (product.images || []).map((imageUrl: string, index: number) => ({ image_url: imageUrl, order_index: index })),
-    product_price_tiers: (product.priceTiers || []).map((tier: any, index: number) => ({
-      id: `static-tier-${product.id}-${index}`,
-      min_quantity: tier.minQuantity ?? tier.min ?? 1,
-      max_quantity: tier.maxQuantity ?? tier.max ?? null,
-      price_amount: tier.price,
-      label: tier.label,
-      is_promo: tier.isPromo ?? tier.is_promo ?? false,
-      order_index: index,
-    })),
-    product_features: (product.features || []).map((feature: string, index: number) => ({ feature_text: feature, order_index: index })),
-    product_specifications: Object.entries(product.specifications || {}).map(([key, value], index) => ({ spec_key: key, spec_value: String(value), order_index: index })),
-    product_recommendations: (product.recommendations || []).map((recommendation: string, index: number) => ({ recommendation_text: recommendation, order_index: index })),
-    _source: 'existing-catalog',
-  };
-}
-
-const existingCatalog = productsCatalog.map(mapStaticProductToAdmin);
-
-async function getReadClient() {
-  if (hasSupabaseAdminConfig()) return supabaseAdmin;
-
+async function getAuthenticatedClient() {
   try {
     const client = createClient();
-    const { data: authData } = await client.auth.getUser();
-    if (authData?.user) return client;
+    const { data, error } = await client.auth.getUser();
+    if (!error && data?.user) return client;
   } catch (error) {
-    console.error('[Admin Repository] Authenticated Supabase client unavailable:', error);
+    console.error('[Admin Repository] Auth client unavailable:', error);
   }
-
   return null;
 }
 
-function getStaticCategories() {
-  const categories = new Map<string, any>();
-  existingCatalog.forEach((product: any) => {
-    if (product.categories?.slug) {
-      categories.set(product.categories.slug, {
-        id: product.category_id || product.categories.slug,
-        name: product.categories.name,
-        slug: product.categories.slug,
-        is_active: true,
-      });
-    }
-  });
-  return Array.from(categories.values());
+async function getAdminReadClients() {
+  const clients: any[] = [];
+  if (hasSupabaseAdminConfig()) clients.push(supabaseAdmin);
+  const authClient = await getAuthenticatedClient();
+  if (authClient) clients.push(authClient);
+  return clients;
 }
 
 export async function getAdminCategories() {
-  const supabase = await getReadClient();
-  if (!supabase) return getStaticCategories();
+  const clients = await getAdminReadClients();
+  let lastError = 'No Supabase client available';
 
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('order_index');
+  for (const supabase of clients) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('order_index');
 
-  if (error) {
-    console.error('Error fetching admin categories:', error.message);
-    return getStaticCategories();
+    if (!error && data) return data;
+    lastError = error?.message || lastError;
   }
 
-  return data || [];
+  console.error('[Admin Repository] Categories unavailable:', lastError);
+  return [];
+}
+
+async function hydrateProducts(supabase: any, products: any[]) {
+  if (!products.length) return products;
+
+  const ids = products.map((p) => p.id);
+  const categoryIds = Array.from(new Set(products.map((p) => p.category_id).filter(Boolean)));
+
+  const [imagesResult, categoriesResult] = await Promise.all([
+    supabase
+      .from('product_images')
+      .select('product_id, image_url, order_index')
+      .in('product_id', ids)
+      .order('order_index'),
+    categoryIds.length
+      ? supabase.from('categories').select('id, name, slug').in('id', categoryIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  const imagesByProduct = new Map<string, any[]>();
+  if (!imagesResult.error) {
+    for (const image of imagesResult.data || []) {
+      const current = imagesByProduct.get(image.product_id) || [];
+      current.push(image);
+      imagesByProduct.set(image.product_id, current);
+    }
+  }
+
+  const categoryById = new Map<string, any>();
+  if (!categoriesResult.error) {
+    for (const category of categoriesResult.data || []) categoryById.set(category.id, category);
+  }
+
+  return products.map((product) => ({
+    ...product,
+    categories: product.category_id ? categoryById.get(product.category_id) || null : null,
+    product_images: imagesByProduct.get(product.id) || [],
+  }));
 }
 
 export async function getAdminProducts() {
-  const supabase = await getReadClient();
-  if (!supabase) return existingCatalog;
+  const clients = await getAdminReadClients();
+  let lastError = 'No Supabase client available';
 
-  // Exactamente la misma consulta que usa el panel antiguo en producción.
-  // Los precios escalables se cargan al editar el producto, no en el listado.
-  const { data, error } = await supabase
-    .from('products')
-    .select('*, categories(name, slug), product_images(image_url, order_index)')
-    .order('created_at', { ascending: false });
+  for (const supabase of clients) {
+    // Primero usamos la consulta exacta del panel viejo.
+    const legacyQuery = await supabase
+      .from('products')
+      .select('*, categories(name, slug), product_images(image_url, order_index)')
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching admin products:', error.message);
-    return existingCatalog;
+    if (!legacyQuery.error && legacyQuery.data?.length) {
+      console.info(`[Admin Repository] Live catalog loaded with legacy query: ${legacyQuery.data.length} products.`);
+      return legacyQuery.data;
+    }
+
+    lastError = legacyQuery.error?.message || lastError;
+    console.warn('[Admin Repository] Legacy joined query failed, retrying base products query:', lastError);
+
+    // Si una relación/RLS rompe el join, recuperamos primero TODOS los productos
+    // y después hidratamos imágenes/categorías por separado.
+    const baseQuery = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!baseQuery.error && baseQuery.data?.length) {
+      const hydrated = await hydrateProducts(supabase, baseQuery.data);
+      console.info(`[Admin Repository] Live catalog loaded with base query: ${hydrated.length} products.`);
+      return hydrated;
+    }
+
+    lastError = baseQuery.error?.message || lastError;
   }
 
-  if (!data || data.length === 0) {
-    console.warn('[Admin Repository] Supabase returned zero products; showing existing catalog fallback.');
-    return existingCatalog;
-  }
-
-  console.info(`[Admin Repository] Full catalog loaded: ${data.length} products.`);
-  return data;
+  // Nunca volver a mostrar silenciosamente los 14 productos estáticos en el administrador.
+  // Es preferible exponer el fallo real antes que hacer creer que el catálogo tiene 14 registros.
+  console.error('[Admin Repository] FULL CATALOG LOAD FAILED:', lastError);
+  throw new Error(`No se pudo cargar el catálogo administrativo real: ${lastError}`);
 }
 
 export async function getAdminProduct(id: string) {
-  const supabase = await getReadClient();
+  const clients = await getAdminReadClients();
+  let lastError = 'No Supabase client available';
 
-  if (supabase) {
+  for (const supabase of clients) {
     const { data, error } = await supabase
       .from('products')
       .select('*, product_price_tiers(*), product_images(*), product_features(*), product_specifications(*), product_recommendations(*)')
@@ -128,16 +129,18 @@ export async function getAdminProduct(id: string) {
       .single();
 
     if (!error && data) return data;
-    if (error) console.error('Error fetching admin product:', error.message);
+    lastError = error?.message || lastError;
   }
 
-  return existingCatalog.find((product: any) => String(product.id) === String(id)) || null;
+  console.error('[Admin Repository] Product load failed:', id, lastError);
+  return null;
 }
 
 export async function getProductAuditData() {
-  const supabase = await getReadClient();
+  const clients = await getAdminReadClients();
+  let lastError = 'No Supabase client available';
 
-  if (supabase) {
+  for (const supabase of clients) {
     const { data, error } = await supabase
       .from('products')
       .select(`
@@ -165,8 +168,9 @@ export async function getProductAuditData() {
       .order('created_at', { ascending: false });
 
     if (!error && data?.length) return data;
-    if (error) console.error('Error fetching product audit data:', error.message);
+    lastError = error?.message || lastError;
   }
 
-  return existingCatalog;
+  console.error('[Admin Repository] Audit data unavailable:', lastError);
+  return [];
 }
