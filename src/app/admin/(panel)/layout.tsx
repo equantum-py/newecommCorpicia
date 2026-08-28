@@ -1,6 +1,5 @@
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { createClient } from '@/lib/supabase/server';
 
 type AdminProfile = {
   name?: string | null;
@@ -21,26 +20,36 @@ export default async function AdminLayout({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
+  // El panel no debe caerse completo si el entorno Preview no tiene
+  // configuración Supabase válida. La lectura del perfil es secundaria.
   if (hasSupabaseConfig) {
     try {
+      const { createClient } = await import('@/lib/supabase/server');
       const supabase = createClient();
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
 
-      if (user) {
-        const { data } = await supabase
-          .from('admin_profiles')
-          .select('name, role, email')
-          .eq('user_id', user.id)
-          .maybeSingle();
+      if (!authError && user) {
+        userName = user.email || userName;
 
-        const profile = data as AdminProfile | null;
-        userName = profile?.name || user.email || userName;
-        userRole = profile?.role || userRole;
+        try {
+          const { data } = await supabase
+            .from('admin_profiles')
+            .select('name, role, email')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const profile = data as AdminProfile | null;
+          userName = profile?.name || profile?.email || userName;
+          userRole = profile?.role || userRole;
+        } catch (profileError) {
+          console.warn('[admin-layout] Perfil administrativo no disponible:', profileError);
+        }
       }
     } catch (error) {
-      console.error('[admin-layout] Supabase unavailable in this deployment:', error);
+      console.warn('[admin-layout] Supabase no disponible; panel continúa en modo seguro:', error);
     }
   }
 
