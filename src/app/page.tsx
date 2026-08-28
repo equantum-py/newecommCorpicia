@@ -3,7 +3,7 @@ export const revalidate = 60;
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ProductCard } from '@/components/ProductCard';
-import { Award, Users, Sprout, BriefcaseBusiness, CheckCircle2, ArrowRight, MessageCircle, Droplets, Leaf, Wrench } from 'lucide-react';
+import { Award, Users, Sprout, Briefcase, CheckCircle2, ArrowRight, MessageCircle, Droplets, Leaf, Wrench } from 'lucide-react';
 import { getProducts } from '@/lib/repositories/products';
 import { getBanners } from '@/lib/repositories/banners';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
@@ -62,7 +62,7 @@ export default async function HomePage() {
     { icon: Award, value: '+10 años', label: 'de experiencia' },
     { icon: Users, value: '+1.000', label: 'clientes satisfechos' },
     { icon: Sprout, value: '+50.000 m²', label: 'instalados' },
-    { icon: BriefcaseBusiness, value: '+50', label: 'proyectos corporativos' },
+    { icon: Briefcase, value: '+50', label: 'proyectos corporativos' },
   ];
 
   const services = [
