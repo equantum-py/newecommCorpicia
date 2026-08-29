@@ -20,7 +20,14 @@ const nextConfig = {
   },
 
   async redirects() {
-    return [];
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'corpicia.com' }],
+        destination: 'https://www.corpicia.com/:path*',
+        permanent: true,
+      },
+    ];
   },
 
   async headers() {
@@ -30,6 +37,8 @@ const nextConfig = {
       !isProduction ? "'unsafe-eval'" : null,
       'https://www.googletagmanager.com',
       'https://www.google-analytics.com',
+      'https://www.googleadservices.com',
+      'https://googleads.g.doubleclick.net',
       'https://www.clarity.ms',
       'https://scripts.clarity.ms',
       'https://connect.facebook.net',
@@ -51,10 +60,10 @@ const nextConfig = {
               "default-src 'self'",
               `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://tile.openstreetmap.org https://www.clarity.ms",
+              "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.supabase.co https://tile.openstreetmap.org https://www.clarity.ms",
               "font-src 'self'",
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://*.supabase.co https://nominatim.openstreetmap.org https://www.clarity.ms https://*.clarity.ms",
-              "frame-src https://www.googletagmanager.com",
+              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.supabase.co https://nominatim.openstreetmap.org https://www.clarity.ms https://*.clarity.ms",
+              "frame-src https://www.googletagmanager.com https://www.google.com https://googleads.g.doubleclick.net",
               "media-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
@@ -66,9 +75,7 @@ const nextConfig = {
       },
       {
         source: '/:all*(js|css|svg|png|jpg|jpeg|gif|webp|avif|ico|woff|woff2)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
     ];
   },
