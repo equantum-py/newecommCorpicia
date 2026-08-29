@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getHomeHeroSettings } from '@/lib/repositories/home-hero';
+import { getHomeHeroSettings } from '@/lib/repositories/home-hero.server';
 
 export const dynamic = 'force-dynamic';
 
