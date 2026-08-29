@@ -7,11 +7,15 @@ export const revalidate = 0;
 
 export default async function AdminProductosPage() {
   const products = await getAdminProducts();
+  const sortedProducts = [...products].sort((a, b) => {
+    if (a.isActive === b.isActive) return 0;
+    return a.isActive ? -1 : 1;
+  });
 
   return (
     <div className="space-y-6">
       <ConnectionNotice />
-      <ProductsTable products={products} />
+      <ProductsTable products={sortedProducts} />
     </div>
   );
 }
