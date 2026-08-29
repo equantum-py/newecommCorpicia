@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import './globals.css';
 
 const siteUrl = 'https://www.corpicia.com';
@@ -39,9 +40,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur">
           <div className="container mx-auto px-4 min-h-16 flex items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-              <img src="/icon-192.png" alt="Corpicia" className="h-10 w-10 object-contain" />
-              <span>CORPICIA</span>
+            <Link href="/" className="flex items-center" aria-label="Corpicia - Inicio">
+              <Image
+                src="/logo-corpicia.png"
+                alt="Corpicia"
+                width={180}
+                height={60}
+                priority
+                className="h-11 w-auto object-contain sm:h-12"
+              />
             </Link>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-700">
               <Link href="/">Inicio</Link>
