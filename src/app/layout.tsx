@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Contactar a Corpicia por WhatsApp"
-          className="fixed bottom-5 right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#1fbd5b] sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
+          className="fixed bottom-20 right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#1fbd5b] sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
         >
           <WhatsAppIcon className="h-7 w-7 sm:h-8 sm:w-8" />
         </a>
@@ -86,13 +86,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="border-t bg-[#062b17] text-white">
           <div className="container mx-auto px-4 py-8 grid gap-7 md:grid-cols-3 md:items-start">
             <div>
-              <Image
-                src="/logo-corpicia.png"
-                alt="Corpicia"
-                width={220}
-                height={74}
-                className="h-16 w-auto object-contain brightness-0 invert"
-              />
+              <div className="inline-flex rounded-xl bg-white p-2.5 shadow-sm">
+                <Image
+                  src="/logo-corpicia.png"
+                  alt="Corpicia"
+                  width={220}
+                  height={74}
+                  className="h-14 w-auto object-contain sm:h-16"
+                />
+              </div>
               <p className="mt-3 max-w-sm text-sm text-white/70">Césped natural, riego automático y paisajismo en Paraguay.</p>
             </div>
             <div>
