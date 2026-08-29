@@ -19,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 const bannerImage=(b:any)=>b?.image_desktop||b?.imageDesktop||b?.image_mobile||b?.imageMobile||'';
 const bannerLink=(b:any)=>b?.cta_link||b?.link||'#';
+const normalizeCategory=(value?:string)=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'');
 export default async function HomePage(){
  const [productsCatalog,bannersResult,professionalCta,hero]=await Promise.all([getProducts(),getBanners(),getProfessionalCta(),getHomeHeroSettings()]);
  const heroBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='hero'):bannersResult.hero;
@@ -27,7 +28,8 @@ export default async function HomePage(){
  const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
  const featuredProducts=pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']);
  const irrigationProducts=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
- const landscapeProducts=pick(['piso-ecologico-40x60','separador-cesped-caminos','pisos-imitacion-madera','granza-blanca-fina-decorativa','canto-rodado']);
+ const landscapeCategories=new Set(['decorativos','pisos-exteriores']);
+ const landscapeProducts=productsCatalog.filter((p:any)=>landscapeCategories.has(normalizeCategory(p.categorySlug||p.category)));
  const visibleProductIds=new Set([...featuredProducts,...irrigationProducts,...landscapeProducts].map((p:any)=>p.id));
  const moreActiveProducts=productsCatalog.filter((p:any)=>!visibleProductIds.has(p.id));
  const whatsapp=getWhatsAppUrl(); const legacyHeroImage=bannerImage(heroBanners?.[0]); const desktopHero=hero.mode==='banner'?hero.desktopImage:legacyHeroImage; const mobileHero=hero.mode==='banner'?(hero.mobileImage||hero.desktopImage):legacyHeroImage;
