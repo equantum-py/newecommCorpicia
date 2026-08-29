@@ -1,8 +1,9 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  // ✅ CORREGIDO: Sin espacio, sin www (dominio principal)
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://corpicia.com').trim();
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.corpicia.com')
+    .trim()
+    .replace(/\/$/, '');
 
   return {
     rules: [
