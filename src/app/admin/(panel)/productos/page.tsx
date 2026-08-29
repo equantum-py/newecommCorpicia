@@ -8,8 +8,8 @@ export const revalidate = 0;
 export default async function AdminProductosPage() {
   const products = await getAdminProducts();
   const sortedProducts = [...products].sort((a, b) => {
-    if (a.isActive === b.isActive) return 0;
-    return a.isActive ? -1 : 1;
+    if (a.is_active === b.is_active) return 0;
+    return a.is_active === true ? -1 : 1;
   });
 
   return (
