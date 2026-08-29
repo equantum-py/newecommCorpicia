@@ -21,7 +21,7 @@ Ecommerce moderno para Corpicia - especialistas en césped natural y jardinería
 
 ## 🛠️ Instalación
 
-1. Clonar el repositorio:
+1. Clonar repositorio:
 ```bash
 git clone https://github.com/tuusuario/corpicia.git
 cd corpicia
@@ -82,3 +82,5 @@ vercel
 ## 📄 Licencia
 
 MIT - Corpicia 2024
+
+<!-- preview redeploy trigger: 2026-08-29 11:04 PY -->
