@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ProductCard } from '@/components/ProductCard';
 import { Award, Users, Sprout, Briefcase, CheckCircle2, ArrowRight, MessageCircle, Droplets, Leaf, Wrench } from 'lucide-react';
-import { getProducts } from '@/lib/repositories/products';
+import { getProducts, getProductsByCategory } from '@/lib/repositories/products';
 import { getBanners } from '@/lib/repositories/banners';
 import { ProfessionalCta } from '@/components/home/ProfessionalCta';
 import { getProfessionalCta } from '@/lib/repositories/professional-cta';
@@ -19,17 +19,22 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 const bannerImage=(b:any)=>b?.image_desktop||b?.imageDesktop||b?.image_mobile||b?.imageMobile||'';
 const bannerLink=(b:any)=>b?.cta_link||b?.link||'#';
-const normalizeCategory=(value?:string)=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'');
 export default async function HomePage(){
- const [productsCatalog,bannersResult,professionalCta,hero]=await Promise.all([getProducts(),getBanners(),getProfessionalCta(),getHomeHeroSettings()]);
+ const [productsCatalog,decorativeProducts,exteriorFloorProducts,bannersResult,professionalCta,hero]=await Promise.all([
+  getProducts(),
+  getProductsByCategory('decorativos'),
+  getProductsByCategory('pisos-exteriores'),
+  getBanners(),
+  getProfessionalCta(),
+  getHomeHeroSettings()
+ ]);
  const heroBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='hero'):bannersResult.hero;
  const secondaryBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='secondary'):bannersResult.secondary;
  const allPromotions=[...(heroBanners||[]),...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
  const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
  const featuredProducts=pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']);
  const irrigationProducts=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
- const landscapeCategories=new Set(['decorativos','pisos-exteriores']);
- const landscapeProducts=productsCatalog.filter((p:any)=>landscapeCategories.has(normalizeCategory(p.categorySlug||p.category)));
+ const landscapeProducts=[...decorativeProducts,...exteriorFloorProducts].filter((p:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===p.id)===i);
  const visibleProductIds=new Set([...featuredProducts,...irrigationProducts,...landscapeProducts].map((p:any)=>p.id));
  const moreActiveProducts=productsCatalog.filter((p:any)=>!visibleProductIds.has(p.id));
  const whatsapp=getWhatsAppUrl(); const legacyHeroImage=bannerImage(heroBanners?.[0]); const desktopHero=hero.mode==='banner'?hero.desktopImage:legacyHeroImage; const mobileHero=hero.mode==='banner'?(hero.mobileImage||hero.desktopImage):legacyHeroImage;
