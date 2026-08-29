@@ -10,7 +10,7 @@ import { getBanners } from '@/lib/repositories/banners';
 import { ProfessionalCta } from '@/components/home/ProfessionalCta';
 import { getProfessionalCta } from '@/lib/repositories/professional-cta';
 import { getSeoEntry } from '@/lib/repositories/seo';
-import { getHomeHeroSettings } from '@/lib/repositories/home-hero';
+import { getHomeHeroSettings } from '@/lib/repositories/home-hero.server';
 import { getWhatsAppUrl } from '@/lib/utils';
 
 export async function generateMetadata(): Promise<Metadata> {
