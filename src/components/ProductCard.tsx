@@ -99,26 +99,17 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        <div className="mt-auto flex items-center gap-2">
-          <Link
-            href={productPath}
-            className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-gray-200 px-3 text-xs font-bold text-gray-700 transition-colors hover:border-green-200 hover:bg-green-50 hover:text-corpicia-green sm:text-sm"
-          >
-            Ver producto
-          </Link>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleWhatsAppClick}
-            aria-label={`Consultar ${product.name} por WhatsApp`}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-xs font-bold text-white transition-all hover:bg-[#1fbd5b] hover:shadow-md sm:text-sm"
-          >
-            <MessageCircle className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">WhatsApp</span>
-            <span className="sm:hidden">Consultar</span>
-          </a>
-        </div>
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleWhatsAppClick}
+          aria-label={`Consultar ${product.name} por WhatsApp`}
+          className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-3 py-2.5 text-center text-xs font-bold text-white transition-all hover:bg-[#1fbd5b] hover:shadow-md sm:text-sm"
+        >
+          <MessageCircle className="h-4 w-4 shrink-0" />
+          <span>Consultar por WhatsApp</span>
+        </a>
       </CardContent>
     </Card>
   );
