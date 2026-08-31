@@ -29,25 +29,49 @@ export type WorkGallerySettings = {
 export function normalizeWorkGalleryPhotos(item: WorkGalleryItem): WorkGalleryPhoto[] {
   const raw = item.images?.length ? item.images : (item.image ? [item.image] : []);
 
-  const normalized = raw
-    .map((photo, index) => {
+  const normalized: WorkGalleryPhoto[] = raw
+    .map<WorkGalleryPhoto>((photo, index) => {
       if (typeof photo === 'string') {
         const stage: WorkPhotoStage =
-          raw.length === 1 ? 'after' : index === 0 ? 'before' : index === raw.length - 1 ? 'after' : 'process';
-        return { id: `legacy-${index}-${photo}`, url: photo, stage, order: index };
+          raw.length === 1
+            ? 'after'
+            : index === 0
+              ? 'before'
+              : index === raw.length - 1
+                ? 'after'
+                : 'process';
+
+        return {
+          id: `legacy-${index}-${photo}`,
+          url: photo,
+          stage,
+          order: index,
+        };
       }
+
+      const stage: WorkPhotoStage =
+        photo.stage === 'before' || photo.stage === 'after' || photo.stage === 'process'
+          ? photo.stage
+          : 'process';
 
       return {
         id: String(photo.id || `photo-${index}`),
         url: String(photo.url || ''),
-        stage: photo.stage === 'before' || photo.stage === 'after' ? photo.stage : 'process',
+        stage,
         order: Number.isFinite(photo.order) ? photo.order : index,
       };
     })
-    .filter((photo) => photo.url);
+    .filter((photo): photo is WorkGalleryPhoto => Boolean(photo.url));
 
-  const rank: Record<WorkPhotoStage, number> = { before: 0, process: 1, after: 2 };
-  return normalized.sort((a, b) => rank[a.stage] - rank[b.stage] || a.order - b.order);
+  const rank: Record<WorkPhotoStage, number> = {
+    before: 0,
+    process: 1,
+    after: 2,
+  };
+
+  return normalized.sort(
+    (a, b) => rank[a.stage] - rank[b.stage] || a.order - b.order,
+  );
 }
 
 export const DEFAULT_WORK_GALLERY: WorkGallerySettings = {
