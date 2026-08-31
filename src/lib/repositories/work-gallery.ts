@@ -5,6 +5,7 @@ export type WorkGalleryItem = {
   location: string;
   description: string;
   image: string;
+  images?: string[];
   active: boolean;
 };
 
