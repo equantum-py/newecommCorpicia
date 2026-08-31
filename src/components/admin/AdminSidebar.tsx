@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Megaphone, Package, ShoppingCart, Wrench, MoreHorizontal, Eye, Images } from 'lucide-react';
+import { Home, Megaphone, Package, ShoppingCart, Wrench, MoreHorizontal, Eye, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const primaryItems = [
@@ -10,7 +10,7 @@ const primaryItems = [
   { name: 'Productos', href: '/admin/productos', icon: Package },
   { name: 'Promociones', href: '/admin/banners', icon: Megaphone },
   { name: 'Servicios', href: '/admin/servicios', icon: Wrench },
-  { name: 'Galería', href: '/admin/galeria', icon: Images },
+  { name: 'Galería', href: '/admin/galeria', icon: ImageIcon },
   { name: 'Presupuestos', href: '/admin/presupuestos', icon: ShoppingCart },
 ];
 
