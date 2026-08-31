@@ -12,28 +12,26 @@ export async function saveWorkGallerySettings(data: WorkGallerySettings) {
       eyebrow: String(data.eyebrow || '').trim(),
       title: String(data.title || '').trim(),
       description: String(data.description || '').trim(),
-      items: (Array.isArray(data.items) ? data.items : []).map((item, index) => ({
-        id: String(item.id || crypto.randomUUID()),
-        title: String(item.title || '').trim(),
-        category: String(item.category || '').trim(),
-        location: String(item.location || '').trim(),
-        description: String(item.description || '').trim(),
-        image: String(item.image || '').trim(),
-        active: item.active !== false,
-      })).filter(item => item.title && item.image).slice(0, 50),
+      items: (Array.isArray(data.items) ? data.items : []).map(item => {
+        const images = (Array.isArray(item.images) ? item.images : [item.image]).map(String).map(v => v.trim()).filter(Boolean).slice(0, 20);
+        const cover = String(item.image || images[0] || '').trim();
+        return {
+          id: String(item.id || crypto.randomUUID()),
+          title: String(item.title || '').trim(),
+          category: String(item.category || '').trim(),
+          location: String(item.location || '').trim(),
+          description: String(item.description || '').trim(),
+          image: cover,
+          images: images.length ? images : (cover ? [cover] : []),
+          active: item.active !== false,
+        };
+      }).filter(item => item.title && item.image).slice(0, 50),
     };
-    const { error } = await supabaseAdmin.from('site_settings').upsert({
-      key: 'work_gallery', value: payload, is_public: true, updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' });
+    const { error } = await supabaseAdmin.from('site_settings').upsert({ key: 'work_gallery', value: payload, is_public: true, updated_at: new Date().toISOString() }, { onConflict: 'key' });
     if (error) return { success: false, error: error.message };
-    revalidatePath('/');
-    revalidatePath('/proyectos');
-    revalidatePath('/admin/galeria');
+    revalidatePath('/'); revalidatePath('/proyectos'); revalidatePath('/admin/galeria');
     return { success: true };
-  } catch (error) {
-    console.error('[Work Gallery] Save error:', error);
-    return { success: false, error: 'No se pudo guardar la galería.' };
-  }
+  } catch (error) { console.error('[Work Gallery] Save error:', error); return { success: false, error: 'No se pudo guardar la galería.' }; }
 }
 
 export async function uploadWorkGalleryImage(formData: FormData) {
@@ -50,8 +48,5 @@ export async function uploadWorkGalleryImage(formData: FormData) {
     if (error) return { success: false, error: error.message };
     const { data } = supabaseAdmin.storage.from('product-images').getPublicUrl(path);
     return { success: true, publicUrl: data.publicUrl };
-  } catch (error) {
-    console.error('[Work Gallery] Upload error:', error);
-    return { success: false, error: 'No se pudo subir la imagen.' };
-  }
+  } catch (error) { console.error('[Work Gallery] Upload error:', error); return { success: false, error: 'No se pudo subir la imagen.' }; }
 }
