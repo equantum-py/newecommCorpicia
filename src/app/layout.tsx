@@ -210,6 +210,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/">Inicio</Link>
               <Link href="/productos">Productos</Link>
               <Link href="/servicios">Servicios</Link>
+              <Link href="/proyectos">Trabajos</Link>
               <Link href="/nosotros">Nosotros</Link>
               <Link href="/contacto">Contacto</Link>
             </nav>
@@ -236,6 +237,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="mt-2 flex flex-col gap-1 text-sm text-white/70">
                 <Link href="/productos">Productos</Link>
                 <Link href="/servicios">Servicios</Link>
+                <Link href="/proyectos">Trabajos</Link>
                 <Link href="/nosotros">Nosotros</Link>
               </div>
             </div>
