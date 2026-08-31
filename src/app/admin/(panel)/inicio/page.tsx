@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Eye, FileText, Home, Images, Megaphone, Package, Wrench } from 'lucide-react';
+import { ArrowRight, Eye, FileText, Home, ImageIcon, Megaphone, Package, Wrench } from 'lucide-react';
 
 const mainActions = [
   { title: 'Editar Home', note: 'Textos y contenido principal', href: '/admin/inicio#editar-home', icon: Home },
   { title: 'Productos', note: 'Precios, fotos y disponibilidad', href: '/admin/productos', icon: Package },
   { title: 'Promociones', note: 'Banners y ofertas', href: '/admin/banners', icon: Megaphone },
   { title: 'Servicios', note: 'Césped, riego y paisajismo', href: '/admin/servicios', icon: Wrench },
-  { title: 'Galería', note: 'Trabajos realizados', href: '/admin/galeria', icon: Images },
+  { title: 'Galería', note: 'Trabajos realizados', href: '/admin/galeria', icon: ImageIcon },
   { title: 'Presupuestos', note: 'Ver solicitudes recibidas', href: '/admin/presupuestos', icon: FileText },
 ];
 const homeActions = [
