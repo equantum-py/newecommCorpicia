@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { WorkGallerySettings } from '@/lib/repositories/work-gallery';
+import { normalizeWorkGalleryPhotos, type WorkGallerySettings } from '@/lib/repositories/work-gallery';
 
 export async function saveWorkGallerySettings(data: WorkGallerySettings) {
   if (!supabaseAdmin) return { success: false, error: 'Supabase Admin no está configurado.' };
@@ -13,8 +13,10 @@ export async function saveWorkGallerySettings(data: WorkGallerySettings) {
       title: String(data.title || '').trim(),
       description: String(data.description || '').trim(),
       items: (Array.isArray(data.items) ? data.items : []).map(item => {
-        const images = (Array.isArray(item.images) ? item.images : [item.image]).map(String).map(v => v.trim()).filter(Boolean).slice(0, 20);
-        const cover = String(item.image || images[0] || '').trim();
+        const photos = normalizeWorkGalleryPhotos(item).slice(0, 20).map((photo, index) => ({ ...photo, order: index }));
+        const requestedCover = String(item.image || '').trim();
+        const afterPhoto = photos.find(photo => photo.stage === 'after')?.url;
+        const cover = photos.some(photo => photo.url === requestedCover) ? requestedCover : (afterPhoto || photos[0]?.url || '');
         return {
           id: String(item.id || crypto.randomUUID()),
           title: String(item.title || '').trim(),
@@ -22,7 +24,7 @@ export async function saveWorkGallerySettings(data: WorkGallerySettings) {
           location: String(item.location || '').trim(),
           description: String(item.description || '').trim(),
           image: cover,
-          images: images.length ? images : (cover ? [cover] : []),
+          images: photos,
           active: item.active !== false,
         };
       }).filter(item => item.title && item.image).slice(0, 50),
