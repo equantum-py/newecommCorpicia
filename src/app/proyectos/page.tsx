@@ -72,11 +72,11 @@ export default async function ProyectosPage() {
                       )}
                     </div>
 
-                    <div className={`grid gap-6 ${desktopGrid}`}>
+                    <div className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:overflow-visible lg:pb-0 lg:pr-0 ${desktopGrid}`}>
                       {visibleStages.map(({ stage, photos: stagePhotos }) => {
                         const info = stageInfo[stage];
                         return (
-                          <section key={stage} className="min-w-0">
+                          <section key={stage} className="w-[86vw] max-w-[430px] shrink-0 snap-start sm:w-[72vw] lg:w-auto lg:max-w-none lg:shrink">
                             <div className="mb-3 flex items-center gap-3">
                               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-corpicia-green text-[11px] font-bold text-white">{info.number}</span>
                               <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900 sm:text-base">{info.label}</h3>
@@ -91,7 +91,7 @@ export default async function ProyectosPage() {
                                     alt={`${project.title} - ${info.label} ${index + 1}`}
                                     fill
                                     className="object-cover"
-                                    sizes={visibleStages.length === 2 ? '(max-width:1023px) 100vw, 50vw' : '(max-width:1023px) 100vw, 33vw'}
+                                    sizes={visibleStages.length === 2 ? '(max-width:1023px) 86vw, 50vw' : '(max-width:1023px) 86vw, 33vw'}
                                   />
                                   <figcaption className="absolute bottom-3 left-3 rounded-lg bg-black/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
                                     {info.label}{stagePhotos.length > 1 ? ` ${index + 1}` : ''}
@@ -103,6 +103,10 @@ export default async function ProyectosPage() {
                         );
                       })}
                     </div>
+
+                    {visibleStages.length > 1 && (
+                      <p className="mt-2 text-center text-xs font-medium text-gray-400 lg:hidden">Deslizá para ver la transformación →</p>
+                    )}
                   </article>
                 );
               })}
