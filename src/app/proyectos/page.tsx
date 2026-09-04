@@ -25,7 +25,7 @@ export default async function ProyectosPage() {
   return (
     <main className="bg-white">
       <section className="bg-[#073d22] py-10 text-white sm:py-14">
-        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold uppercase tracking-widest text-green-300">Trabajos realizados</p>
           <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Antes, proceso y resultado</h1>
           <p className="mt-3 max-w-2xl text-white/80">Conocé transformaciones reales de Corpicia. Mirá cómo encontramos cada espacio, el trabajo realizado y cómo quedó terminado.</p>
@@ -33,13 +33,13 @@ export default async function ProyectosPage() {
       </section>
 
       <section className="py-8 sm:py-10 lg:py-12">
-        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
           {projects.length === 0 ? (
             <div className="rounded-2xl border border-dashed bg-gray-50 p-10 text-center">
               <p className="font-bold text-gray-900">Todavía no hay trabajos publicados.</p>
             </div>
           ) : (
-            <div className="space-y-12 lg:space-y-16">
+            <div className="space-y-12 lg:space-y-14">
               {projects.map((project, projectIndex) => {
                 const photos = normalizeWorkGalleryPhotos(project);
                 const stages: WorkPhotoStage[] = ['before', 'process', 'after'];
@@ -49,13 +49,13 @@ export default async function ProyectosPage() {
 
                 const desktopGrid =
                   visibleStages.length === 1
-                    ? 'lg:grid-cols-1'
+                    ? 'lg:grid-cols-1 lg:max-w-[560px]'
                     : visibleStages.length === 2
-                      ? 'lg:grid-cols-2'
-                      : 'lg:grid-cols-3';
+                      ? 'lg:grid-cols-2 lg:max-w-[1080px]'
+                      : 'lg:grid-cols-3 lg:max-w-[1180px]';
 
                 return (
-                  <article key={project.id} className="border-b pb-10 last:border-b-0 lg:pb-14">
+                  <article key={project.id} className="border-b pb-10 last:border-b-0 lg:pb-12">
                     <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-widest text-corpicia-green">Proyecto {String(projectIndex + 1).padStart(2, '0')} · {project.category}</p>
@@ -72,7 +72,7 @@ export default async function ProyectosPage() {
                       )}
                     </div>
 
-                    <div className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:overflow-visible lg:pb-0 lg:pr-0 ${desktopGrid}`}>
+                    <div className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mx-auto lg:grid lg:overflow-visible lg:pb-0 lg:pr-0 ${desktopGrid}`}>
                       {visibleStages.map(({ stage, photos: stagePhotos }) => {
                         const info = stageInfo[stage];
                         return (
@@ -85,13 +85,13 @@ export default async function ProyectosPage() {
 
                             <div className="grid gap-3 sm:gap-4">
                               {stagePhotos.map((photo, index) => (
-                                <figure key={photo.id} className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-100">
+                                <figure key={photo.id} className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-100 lg:aspect-[16/10]">
                                   <Image
                                     src={photo.url}
                                     alt={`${project.title} - ${info.label} ${index + 1}`}
                                     fill
                                     className="object-cover"
-                                    sizes={visibleStages.length === 2 ? '(max-width:1023px) 86vw, 50vw' : '(max-width:1023px) 86vw, 33vw'}
+                                    sizes={visibleStages.length === 2 ? '(max-width:1023px) 86vw, 520px' : '(max-width:1023px) 86vw, 380px'}
                                   />
                                   <figcaption className="absolute bottom-3 left-3 rounded-lg bg-black/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
                                     {info.label}{stagePhotos.length > 1 ? ` ${index + 1}` : ''}
