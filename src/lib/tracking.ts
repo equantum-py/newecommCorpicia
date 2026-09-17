@@ -13,6 +13,7 @@ function generateId(): string {
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -152,6 +153,19 @@ function pushDataLayer(event: Record<string, unknown>) {
   window.dataLayer.push(event);
 }
 
+function trackGoogleAdsWhatsAppConversion() {
+  if (typeof window === 'undefined') return;
+  const sendTo = 'AW-17945928058/XQOoCPvD_vocEPrCpO1C';
+
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'conversion', { send_to: sendTo });
+    return;
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: 'conversion', send_to: sendTo });
+}
+
 export function trackWhatsAppClick(source: string, identifier: string) {
   if (typeof window === 'undefined') return;
   pushDataLayer({
@@ -162,6 +176,7 @@ export function trackWhatsAppClick(source: string, identifier: string) {
     entity_id: identifier,
     page_path: window.location.pathname,
   });
+  trackGoogleAdsWhatsAppConversion();
   trackEvent({ event_name: 'whatsapp_click', page_path: window.location.pathname, button_location: source, entity_id: identifier, metadata: { source, identifier } });
 }
 
