@@ -5,8 +5,7 @@ import { ChangeEvent, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createServiceAction, updateServiceAction } from '@/lib/actions/admin-services';
-import { supabase } from '@/lib/supabase';
+import { createServiceAction, updateServiceAction, uploadServiceImageAction } from '@/lib/actions/admin-services';
 import { ImagePlus, Loader2, Trash2, Upload, X } from 'lucide-react';
 
 type ServiceFormModalProps = {
@@ -65,11 +64,6 @@ export function ServiceFormModal({ isOpen, onClose, service }: ServiceFormModalP
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!supabase) {
-      setErrorMsg('Supabase no está configurado.');
-      return;
-    }
-
     if (!ALLOWED_TYPES.includes(file.type)) {
       setErrorMsg('La imagen debe ser JPG, PNG o WebP.');
       event.target.value = '';
@@ -86,24 +80,15 @@ export function ServiceFormModal({ isOpen, onClose, service }: ServiceFormModalP
     setErrorMsg('');
 
     try {
-      const fileName = sanitizeFileName(file.name);
-      const filePath = `services/${fileName}`;
+      const uploadData = new FormData();
+      uploadData.set('file', file);
+      const result = await uploadServiceImageAction(uploadData);
 
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, {
-          cacheControl: '31536000',
-          upsert: false,
-          contentType: file.type,
-        });
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'No se pudo subir la imagen.');
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      setImageUrl(data.publicUrl);
+      setImageUrl(result.url);
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : 'No se pudo subir la imagen.');
     } finally {
