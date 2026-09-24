@@ -33,3 +33,55 @@ DROP POLICY IF EXISTS "Public can view collection items" ON product_collection_i
 CREATE POLICY "Public can view collection items" ON product_collection_items FOR SELECT USING (
   EXISTS (SELECT 1 FROM product_collections c WHERE c.id = collection_id AND c.is_active = true)
 );
+
+
+-- Colecciones iniciales que representan las secciones actuales del Home.
+-- Los productos se vinculan por slug para conservar exactamente la selección actual.
+INSERT INTO product_collections (title, slug, description, is_active, show_on_home, home_order_index, sort_mode)
+VALUES
+ ('Productos destacados','productos-destacados','Productos principales mostrados al inicio del Home.',true,true,1,'manual'),
+ ('Riego automático','riego-automatico-home','Productos de riego automático mostrados en el bloque verde del Home.',true,true,2,'manual'),
+ ('Terminaciones y materiales','terminaciones-materiales','Productos de paisajismo, terminaciones y materiales.',true,true,3,'manual'),
+ ('Más productos para tu proyecto','mas-productos-proyecto','Resto del catálogo activo mostrado al final del Home.',true,true,4,'manual')
+ON CONFLICT (slug) DO UPDATE SET
+ title=EXCLUDED.title,
+ description=EXCLUDED.description,
+ is_active=EXCLUDED.is_active,
+ show_on_home=EXCLUDED.show_on_home,
+ home_order_index=EXCLUDED.home_order_index,
+ sort_mode=EXCLUDED.sort_mode;
+
+WITH featured(slug, pos) AS (
+ VALUES ('cesped-esmeralda',1),('cesped-siempre-verde',2),('cesped-kavaju',3),('cesped-mani-docena',4)
+), c AS (SELECT id FROM product_collections WHERE slug='productos-destacados')
+INSERT INTO product_collection_items(collection_id,product_id,order_index)
+SELECT c.id,p.id,f.pos FROM featured f JOIN products p ON p.slug=f.slug CROSS JOIN c
+ON CONFLICT(collection_id,product_id) DO UPDATE SET order_index=EXCLUDED.order_index;
+
+WITH irrigation(slug,pos) AS (
+ VALUES ('valvula-riego-rain-bird',1),('aspersor-rain-bird-5004',2),('mini-rotor-rain-bird-3500',3),('difusor-riego',4)
+), c AS (SELECT id FROM product_collections WHERE slug='riego-automatico-home')
+INSERT INTO product_collection_items(collection_id,product_id,order_index)
+SELECT c.id,p.id,i.pos FROM irrigation i JOIN products p ON p.slug=i.slug CROSS JOIN c
+ON CONFLICT(collection_id,product_id) DO UPDATE SET order_index=EXCLUDED.order_index;
+
+WITH landscape AS (
+ SELECT p.id, row_number() OVER (ORDER BY p.created_at DESC)::int pos
+ FROM products p JOIN categories c ON c.id=p.category_id
+ WHERE c.slug IN ('decorativos','pisos-exteriores') AND p.is_active=true
+), pc AS (SELECT id FROM product_collections WHERE slug='terminaciones-materiales')
+INSERT INTO product_collection_items(collection_id,product_id,order_index)
+SELECT pc.id,l.id,l.pos FROM landscape l CROSS JOIN pc
+ON CONFLICT(collection_id,product_id) DO UPDATE SET order_index=EXCLUDED.order_index;
+
+WITH already AS (
+ SELECT pci.product_id FROM product_collection_items pci
+ JOIN product_collections pc ON pc.id=pci.collection_id
+ WHERE pc.slug IN ('productos-destacados','riego-automatico-home','terminaciones-materiales')
+), remaining AS (
+ SELECT p.id,row_number() OVER (ORDER BY p.created_at DESC)::int pos
+ FROM products p WHERE p.is_active=true AND p.id NOT IN (SELECT product_id FROM already)
+), pc AS (SELECT id FROM product_collections WHERE slug='mas-productos-proyecto')
+INSERT INTO product_collection_items(collection_id,product_id,order_index)
+SELECT pc.id,r.id,r.pos FROM remaining r CROSS JOIN pc
+ON CONFLICT(collection_id,product_id) DO UPDATE SET order_index=EXCLUDED.order_index;
