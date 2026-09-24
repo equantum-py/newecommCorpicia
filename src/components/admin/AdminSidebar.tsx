@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Megaphone, Package, ShoppingCart, Wrench, MoreHorizontal, Eye, ImageIcon } from 'lucide-react';
+import { Home, Megaphone, Package, ShoppingCart, Wrench, MoreHorizontal, Eye, ImageIcon, Tags } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const primaryItems = [
   { name: 'Inicio', href: '/admin/inicio', icon: Home },
   { name: 'Productos', href: '/admin/productos', icon: Package },
+  { name: 'Colecciones', href: '/admin/colecciones', icon: Tags },
   { name: 'Promociones', href: '/admin/banners', icon: Megaphone },
   { name: 'Servicios', href: '/admin/servicios', icon: Wrench },
   { name: 'Galería', href: '/admin/galeria', icon: ImageIcon },
