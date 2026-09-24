@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,12 @@ import {
   ExternalLink,
   Copy,
   FileSpreadsheet,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { PRODUCT_IMAGE_FALLBACKS } from '@/lib/product-image-fallbacks';
-import { deleteProduct, duplicateProduct, toggleProductStatus } from '@/lib/actions/admin-products';
+import { deleteProduct, duplicateProduct, toggleProductStatus, updateHomeProductOrder } from '@/lib/actions/admin-products';
 
 function getAdminProductImage(product: any) {
   const dbImage =
@@ -31,11 +33,39 @@ function getAdminProductImage(product: any) {
 export default function ProductsTable({ products }: { products: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const initialHomeProducts = useMemo(() => products.filter((p: any) => p.home_order_index != null).sort((a: any,b: any) => a.home_order_index-b.home_order_index).map((p:any)=>p.id), [products]);
+  const [homeProductIds, setHomeProductIds] = useState<string[]>(initialHomeProducts);
+  const [savingHomeOrder, setSavingHomeOrder] = useState(false);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const toggleHomeProduct = (id: string) => {
+    setHomeProductIds((current) => current.includes(id) ? current.filter((x) => x !== id) : [...current, id].slice(0, 12));
+  };
+
+  const moveHomeProduct = (id: string, direction: -1 | 1) => {
+    setHomeProductIds((current) => {
+      const index = current.indexOf(id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+
+  const saveHomeOrder = async () => {
+    setSavingHomeOrder(true);
+    try {
+      const res = await updateHomeProductOrder(homeProductIds);
+      alert(res.success ? 'Orden del Home guardado.' : 'Error: ' + res.message);
+    } finally {
+      setSavingHomeOrder(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
@@ -111,6 +141,30 @@ export default function ProductsTable({ products }: { products: any[] }) {
         </div>
       </div>
 
+      <div className="bg-white border rounded-xl shadow-sm p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900">Productos destacados del Home</h2>
+            <p className="text-sm text-gray-500">Orden predeterminado: <strong>Manualmente</strong>. Elegí los productos y definí cuál aparece 1°, 2°, 3° y así sucesivamente.</p>
+          </div>
+          <Button onClick={saveHomeOrder} disabled={savingHomeOrder}>{savingHomeOrder ? 'Guardando...' : 'Guardar orden'}</Button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {homeProductIds.length === 0 && <p className="text-sm text-gray-500">Todavía no seleccionaste productos para el Home.</p>}
+          {homeProductIds.map((id, index) => {
+            const product = products.find((p:any) => p.id === id);
+            if (!product) return null;
+            return <div key={id} className="flex items-center gap-3 rounded-lg border p-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded bg-green-50 text-sm font-bold text-corpicia-green">{index + 1}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{product.name}</span>
+              <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => moveHomeProduct(id,-1)} disabled={index===0}><ArrowUp className="h-4 w-4"/></Button>
+              <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => moveHomeProduct(id,1)} disabled={index===homeProductIds.length-1}><ArrowDown className="h-4 w-4"/></Button>
+              <Button type="button" variant="outline" className="h-8 text-xs" onClick={() => toggleHomeProduct(id)}>Quitar</Button>
+            </div>
+          })}
+        </div>
+      </div>
+
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -132,7 +186,7 @@ export default function ProductsTable({ products }: { products: any[] }) {
                 <th className="px-6 py-4 font-semibold">Categoría</th>
                 <th className="px-6 py-4 font-semibold">Precio Base</th>
                 <th className="px-6 py-4 font-semibold">Unidad</th>
-                <th className="px-6 py-4 font-semibold text-center">Estado</th>
+                <th className="px-6 py-4 font-semibold text-center">Home</th>\n                <th className="px-6 py-4 font-semibold text-center">Estado</th>
                 <th className="px-6 py-4 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
@@ -168,6 +222,11 @@ export default function ProductsTable({ products }: { products: any[] }) {
                     </td>
                     <td className="px-6 py-4 text-gray-500">
                       {product.unit} (Mín: {product.min_order_quantity})
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button type="button" onClick={() => toggleHomeProduct(product.id)} className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${homeProductIds.includes(product.id) ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600'}`}>
+                        {homeProductIds.includes(product.id) ? `#${homeProductIds.indexOf(product.id)+1}` : 'Agregar'}
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center gap-2">
@@ -224,7 +283,7 @@ export default function ProductsTable({ products }: { products: any[] }) {
               })}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron productos.
                   </td>
                 </tr>
