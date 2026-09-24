@@ -86,6 +86,7 @@ export interface Database {
           category_id: string | null
           is_active: boolean
           is_featured: boolean
+          home_order_index: number | null
           seo_title: string | null
           seo_description: string | null
           seo_keywords: string[]
