@@ -1,0 +1,1 @@
+import { getAdminProducts } from '@/lib/repositories/admin';import CollectionEditor from '@/components/admin/CollectionEditor';export const dynamic='force-dynamic';export default async function Page(){return <CollectionEditor products={await getAdminProducts()}/>}
