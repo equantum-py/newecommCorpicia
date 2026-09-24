@@ -437,7 +437,7 @@ export async function updateHomeProductOrder(productIds: string[]): Promise<Acti
       return { success: false, message: 'Las escrituras están deshabilitadas en este entorno.' };
     }
 
-    const cleanIds = [...new Set(productIds.filter(Boolean))];
+    const cleanIds = Array.from(new Set(productIds.filter(Boolean)));
     if (cleanIds.length > 12) {
       return { success: false, message: 'El Home admite hasta 12 productos ordenados.' };
     }
