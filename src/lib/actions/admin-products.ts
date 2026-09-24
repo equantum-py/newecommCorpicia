@@ -425,3 +425,40 @@ export async function toggleProductStatus(id: string, newStatus: boolean): Promi
     return { success: false, message: error.message || 'Error al actualizar estado' };
   }
 }
+
+
+export async function updateHomeProductOrder(productIds: string[]): Promise<ActionState> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, message: 'No autorizado. Inicie sesión.' };
+    if (process.env.ADMIN_WRITES_ENABLED !== 'true') {
+      return { success: false, message: 'Las escrituras están deshabilitadas en este entorno.' };
+    }
+
+    const cleanIds = [...new Set(productIds.filter(Boolean))];
+    if (cleanIds.length > 12) {
+      return { success: false, message: 'El Home admite hasta 12 productos ordenados.' };
+    }
+
+    const productsTable = supabaseAdmin.from('products') as any;
+    const { error: clearError } = await productsTable
+      .update({ home_order_index: null })
+      .not('home_order_index', 'is', null);
+    if (clearError) throw clearError;
+
+    for (let index = 0; index < cleanIds.length; index += 1) {
+      const { error } = await productsTable
+        .update({ home_order_index: index + 1 })
+        .eq('id', cleanIds[index]);
+      if (error) throw error;
+    }
+
+    revalidatePath('/');
+    revalidatePath('/admin/productos');
+    return { success: true, message: 'Orden del Home actualizado.' };
+  } catch (error: any) {
+    return { success: false, message: error.message || 'No se pudo guardar el orden del Home.' };
+  }
+}
