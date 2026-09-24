@@ -34,8 +34,9 @@ export default async function HomePage(){
  const secondaryBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='secondary'):bannersResult.secondary;
  const allPromotions=[...(heroBanners||[]),...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
  const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
+ const manuallyOrderedHomeProducts=productsCatalog.filter((p:any)=>p.home_order_index!=null).sort((a:any,b:any)=>Number(a.home_order_index)-Number(b.home_order_index)).slice(0,12);
  const adminFeaturedProducts=productsCatalog.filter((p:any)=>p.is_featured===true||p.isFeatured===true).slice(0,4);
- const featuredProducts=adminFeaturedProducts.length>0?adminFeaturedProducts:pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']);
+ const featuredProducts=manuallyOrderedHomeProducts.length>0?manuallyOrderedHomeProducts:(adminFeaturedProducts.length>0?adminFeaturedProducts:pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']));
  const irrigationProducts=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
  const landscapeProducts=[...decorativeProducts,...exteriorFloorProducts].filter((p:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===p.id)===i);
  const visibleProductIds=new Set([...featuredProducts,...irrigationProducts,...landscapeProducts].map((p:any)=>p.id));
