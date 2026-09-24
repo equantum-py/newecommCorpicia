@@ -13,6 +13,7 @@ import { getProfessionalCta } from '@/lib/repositories/professional-cta';
 import { getSeoEntry } from '@/lib/repositories/seo';
 import { getHomeHeroSettings } from '@/lib/repositories/home-hero.server';
 import { getWhatsAppUrl } from '@/lib/utils';
+import { getHomeCollections } from '@/lib/repositories/collections';
 
 export async function generateMetadata(): Promise<Metadata> {
  const seo=await getSeoEntry('/'); const defaults={title:'Césped Natural, Paisajismo y Riego Automático en Paraguay | Corpicia',description:'Venta e instalación de césped natural, paisajismo, riego automático y mantenimiento de jardines en Paraguay. Cotizá tu proyecto con Corpicia.',alternates:{canonical:'/'}};
@@ -21,26 +22,41 @@ export async function generateMetadata(): Promise<Metadata> {
 const bannerImage=(b:any)=>b?.image_desktop||b?.imageDesktop||b?.image_mobile||b?.imageMobile||'';
 const bannerLink=(b:any)=>b?.cta_link||b?.link||'#';
 export default async function HomePage(){
- const [productsCatalog,decorativeProducts,exteriorFloorProducts,bannersResult,professionalCta,hero,adminServices]=await Promise.all([
+ const [productsCatalog,decorativeProducts,exteriorFloorProducts,bannersResult,professionalCta,hero,adminServices,homeCollections]=await Promise.all([
   getProducts(),
   getProductsByCategory('decorativos'),
   getProductsByCategory('pisos-exteriores'),
   getBanners(),
   getProfessionalCta(),
   getHomeHeroSettings(),
-  getServices()
+  getServices(),
+  getHomeCollections()
  ]);
  const heroBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='hero'):bannersResult.hero;
  const secondaryBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='secondary'):bannersResult.secondary;
  const allPromotions=[...(heroBanners||[]),...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
  const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
- const manuallyOrderedHomeProducts=productsCatalog.filter((p:any)=>p.home_order_index!=null).sort((a:any,b:any)=>Number(a.home_order_index)-Number(b.home_order_index)).slice(0,12);
- const adminFeaturedProducts=productsCatalog.filter((p:any)=>p.is_featured===true||p.isFeatured===true).slice(0,4);
- const featuredProducts=manuallyOrderedHomeProducts.length>0?manuallyOrderedHomeProducts:(adminFeaturedProducts.length>0?adminFeaturedProducts:pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']));
- const irrigationProducts=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
- const landscapeProducts=[...decorativeProducts,...exteriorFloorProducts].filter((p:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===p.id)===i);
+ const collectionProducts=(slug:string,fallback:any[])=>{
+  const collection=(homeCollections||[]).find((x:any)=>x.slug===slug);
+  if(!collection)return fallback;
+  const items=[...(collection.product_collection_items||[])].sort((a:any,b:any)=>Number(a.order_index)-Number(b.order_index));
+  return items.map((item:any)=>{
+   const dbProduct=item.products;
+   if(!dbProduct||dbProduct.is_active===false)return null;
+   const catalogProduct=productsCatalog.find((p:any)=>p.id===dbProduct.id||p.slug===dbProduct.slug);
+   if(catalogProduct)return catalogProduct;
+   return {...dbProduct,categoryId:dbProduct.category_id,category:dbProduct.categories?.name,categorySlug:dbProduct.categories?.slug,images:dbProduct.product_images?.sort((a:any,b:any)=>a.order_index-b.order_index).map((img:any)=>img.image_url).filter(Boolean)||[],pricePerM2:dbProduct.price_amount,shortDescription:dbProduct.short_description};
+  }).filter(Boolean);
+ };
+ const defaultFeatured=pick(['cesped-esmeralda','cesped-siempre-verde','cesped-kavaju','cesped-mani-docena']);
+ const defaultIrrigation=pick(['valvula-riego-rain-bird','aspersor-rain-bird-5004','mini-rotor-rain-bird-3500','difusor-riego']);
+ const defaultLandscape=[...decorativeProducts,...exteriorFloorProducts].filter((p:any,i:number,a:any[])=>a.findIndex((x:any)=>x.id===p.id)===i);
+ const featuredProducts=collectionProducts('productos-destacados',defaultFeatured);
+ const irrigationProducts=collectionProducts('riego-automatico-home',defaultIrrigation);
+ const landscapeProducts=collectionProducts('terminaciones-materiales',defaultLandscape);
  const visibleProductIds=new Set([...featuredProducts,...irrigationProducts,...landscapeProducts].map((p:any)=>p.id));
- const moreActiveProducts=productsCatalog.filter((p:any)=>!visibleProductIds.has(p.id));
+ const defaultMore=productsCatalog.filter((p:any)=>!visibleProductIds.has(p.id));
+ const moreActiveProducts=collectionProducts('mas-productos-proyecto',defaultMore);
  const whatsapp=getWhatsAppUrl(); const legacyHeroImage=bannerImage(heroBanners?.[0]); const desktopHero=hero.mode==='banner'?hero.desktopImage:legacyHeroImage; const mobileHero=hero.mode==='banner'?(hero.mobileImage||hero.desktopImage):legacyHeroImage;
  const isBannerMode=hero.mode==='banner';
  const desktopBackground=desktopHero?(isBannerMode&&!hero.showTexts?`url(${desktopHero})`:`linear-gradient(90deg,rgba(4,35,17,.9),rgba(4,35,17,.68) 55%,rgba(4,35,17,.18)),url(${desktopHero})`):undefined;
