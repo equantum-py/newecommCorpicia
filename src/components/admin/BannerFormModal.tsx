@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createBanner, updateBanner } from '@/lib/actions/admin-banners';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import { X, Save, UploadCloud, CheckCircle2 } from 'lucide-react';
 
 type BannerFormModalProps = { isOpen: boolean; onClose: () => void; banner?: any };
@@ -23,19 +23,31 @@ function UploadBox({ label, value, onChange, desktop, required }: UploadBoxProps
     setError('');
     if (!['image/webp', 'image/jpeg', 'image/png'].includes(file.type)) return setError('Usá una imagen WebP, JPG o PNG.');
     if (file.size > 5 * 1024 * 1024) return setError('La imagen no puede superar 5 MB.');
-    if (!supabase) return setError('Supabase no está configurado en este entorno.');
+    if (uploading) return;
     setUploading(true);
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'webp';
-    const path = `banners/${desktop ? 'desktop' : 'mobile'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('media').upload(path, file, { cacheControl: '3600', upsert: false });
-    if (uploadError) {
-      setError(`No se pudo subir: ${uploadError.message}`);
+    try {
+      // Use the same cookie-backed session as the administrative login.
+      const supabase = createClient();
+      const ext = { 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' }[file.type] || 'webp';
+      const path = `banners/${desktop ? 'desktop' : 'mobile'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('banners').upload(path, file, {
+        cacheControl: '3600', upsert: false, contentType: file.type,
+      });
+      if (uploadError) {
+        const missingBucket = /bucket.*not found/i.test(uploadError.message);
+        setError(missingBucket
+          ? 'No se encuentra el almacenamiento de banners. Contactá al administrador.'
+          : 'No se pudo subir: ' + uploadError.message);
+        return;
+      }
+      const { data } = supabase.storage.from('banners').getPublicUrl(path);
+      onChange(data.publicUrl);
+    } catch {
+      setError('No se pudo subir la imagen. Revisá tu conexión e intentá nuevamente.');
+    } finally {
       setUploading(false);
-      return;
+      if (inputRef.current) inputRef.current.value = '';
     }
-    const { data } = supabase.storage.from('media').getPublicUrl(path);
-    onChange(data.publicUrl);
-    setUploading(false);
   };
 
   return (
