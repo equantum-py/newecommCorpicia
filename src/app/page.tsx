@@ -34,7 +34,7 @@ export default async function HomePage(){
  ]);
  const heroBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='hero'):bannersResult.hero;
  const secondaryBanners=Array.isArray(bannersResult)?bannersResult.filter((b:any)=>b.type==='secondary'):bannersResult.secondary;
- const allPromotions=[...(heroBanners||[]),...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
+ const allPromotions=[...(secondaryBanners||[])].filter((b:any)=>bannerImage(b)).filter((b:any,i:number,a:any[])=>a.findIndex((x:any)=>(x.id||bannerImage(x))===(b.id||bannerImage(b)))===i).slice(0,3);
  const pick=(slugs:string[])=>slugs.map(slug=>productsCatalog.find((p:any)=>p.slug===slug)).filter(Boolean);
  const collectionProducts=(slug:string,fallback:any[])=>{
   const collection=(homeCollections||[]).find((x:any)=>x.slug===slug);

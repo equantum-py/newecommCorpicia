@@ -7,7 +7,7 @@ import { createBanner, updateBanner } from '@/lib/actions/admin-banners';
 import { createClient } from '@/lib/supabase/client';
 import { X, Save, UploadCloud, CheckCircle2 } from 'lucide-react';
 
-type BannerFormModalProps = { isOpen: boolean; onClose: () => void; banner?: any };
+type BannerFormModalProps = { isOpen: boolean; onClose: () => void; banner?: any; defaultType?: 'hero' | 'secondary'; onSaved?: () => void };
 type UploadBoxProps = {
   label: string; value: string; onChange: (value: string) => void;
   desktop?: boolean; required?: boolean;
@@ -69,7 +69,7 @@ function UploadBox({ label, value, onChange, desktop, required }: UploadBoxProps
   );
 }
 
-export function BannerFormModal({ isOpen, onClose, banner }: BannerFormModalProps) {
+export function BannerFormModal({ isOpen, onClose, banner, defaultType = 'hero', onSaved }: BannerFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [type, setType] = useState('hero');
@@ -83,11 +83,11 @@ export function BannerFormModal({ isOpen, onClose, banner }: BannerFormModalProp
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    setType(banner?.type || 'hero'); setTitle(banner?.title || ''); setSubtitle(banner?.subtitle || '');
+    setType(banner?.type || defaultType); setTitle(banner?.title || ''); setSubtitle(banner?.subtitle || '');
     setImageDesktop(banner?.image_desktop || ''); setImageMobile(banner?.image_mobile || '');
     setCtaText(banner?.cta_text || ''); setCtaLink(banner?.cta_link || '');
     setOrderIndex(banner?.order_index || 0); setIsActive(banner?.is_active ?? true); setErrorMsg('');
-  }, [banner, isOpen]);
+  }, [banner, isOpen, defaultType]);
 
   if (!isOpen) return null;
 
@@ -99,18 +99,18 @@ export function BannerFormModal({ isOpen, onClose, banner }: BannerFormModalProp
     if (banner?.id) formData.append('id', banner.id);
     Object.entries({ type, title, subtitle, image_desktop: imageDesktop, image_mobile: imageMobile, cta_text: ctaText, cta_link: ctaLink, order_index: orderIndex.toString(), is_active: isActive.toString() }).forEach(([k, v]) => formData.append(k, v));
     const result = banner?.id ? await updateBanner(null, formData) : await createBanner(null, formData);
-    if (result.success) onClose(); else setErrorMsg(result.message || 'Error al guardar el banner');
+    if (result.success) { onSaved?.(); onClose(); } else setErrorMsg(result.message || 'Error al guardar el banner');
     setIsSubmitting(false);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/45">
       <div className="flex h-full w-full max-w-[620px] flex-col bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-6 py-5"><h2 className="text-xl font-bold">{banner ? 'Editar Banner' : 'Nuevo Banner'}</h2><button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100"><X className="h-5 w-5 text-gray-500" /></button></div>
+        <div className="flex items-center justify-between border-b px-6 py-5"><h2 className="text-xl font-bold">{banner ? 'Editar banner' : 'Nuevo banner'} · {type === 'hero' ? 'Principal' : 'Del medio'}</h2><button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100"><X className="h-5 w-5 text-gray-500" /></button></div>
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-6 overflow-y-auto p-6">
             {errorMsg && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMsg}</div>}
-            <section><h3 className="font-bold">1. Tipo / Ubicación</h3><p className="mb-2 text-xs text-gray-500">Elegí dónde se mostrará este banner.</p><select value={type} onChange={(e) => setType(e.target.value)} className="h-11 w-full rounded-lg border px-3 text-sm"><option value="hero">Hero (Principal arriba)</option><option value="secondary">Secundario (Entre secciones)</option></select></section>
+            <section><h3 className="font-bold">1. Tipo / Ubicación</h3><p className="mb-2 text-xs text-gray-500">Elegí dónde se mostrará este banner.</p><select value={type} onChange={(e) => setType(e.target.value)} className="h-11 w-full rounded-lg border px-3 text-sm"><option value="hero">Principal · Arriba de la Home</option><option value="secondary">Del medio · Soluciones destacadas</option></select></section>
             <section className="border-t pt-5"><h3 className="font-bold">2. Estado</h3><p className="mb-2 text-xs text-gray-500">¿Está visible en el sitio web?</p><label className="inline-flex cursor-pointer items-center gap-3"><input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-5 w-5 accent-green-700"/><span className="text-sm font-semibold">{isActive ? 'Activo (Visible)' : 'Inactivo (Oculto)'}</span></label></section>
             <section className="space-y-5 border-t pt-5"><div><h3 className="font-bold">3. Imágenes</h3><p className="text-xs text-gray-500">Subí una versión para computadora y otra optimizada para celular.</p></div><UploadBox label="Imagen para Desktop" value={imageDesktop} onChange={setImageDesktop} desktop required /><UploadBox label="Imagen para Mobile" value={imageMobile} onChange={setImageMobile} /></section>
             <details className="rounded-xl border bg-gray-50 p-4"><summary className="cursor-pointer text-sm font-bold">Opciones avanzadas</summary><div className="mt-4 space-y-4"><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título opcional"/><Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Subtítulo opcional"/><div className="grid gap-3 sm:grid-cols-2"><Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} placeholder="Texto del botón"/><Input value={ctaLink} onChange={(e) => setCtaLink(e.target.value)} placeholder="Enlace del botón"/></div><div><label className="mb-1 block text-xs font-semibold">Orden</label><Input type="number" value={orderIndex} onChange={(e) => setOrderIndex(parseInt(e.target.value) || 0)} min="0" className="w-28"/></div></div></details>
